@@ -42,7 +42,6 @@ install:
     default:
       cmds:
         - task: assert_pre_req
-        - task: check_existing_install
         - task: check_config_file
         # - task: update_yum
         # - task: add_gpg_key
@@ -101,22 +100,15 @@ install:
             exit 15
           fi
         - |
-          if ! sudo mkdir -p /px; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m Failed to create /px directory. Aborting installation."
-            echo ""
-            exit 16
-          fi
-
-    check_existing_install:
-      cmds:
-        - |
-          PACKAGE_NAME="newrelic-ebpf-agent"
-          echo "Checking if $PACKAGE_NAME is installed..."
-          if yum list --installed 2>/dev/null | grep -qw "$PACKAGE_NAME"; then
-              echo -e "\033[0;31mERROR:\033[0m $PACKAGE_NAME is already installed. Please uninstall and then run the installation again."
-              echo -e "\nRun the following command to uninstall:\n\nsudo yum remove $PACKAGE_NAME -y\n"
-              exit 1
+          if [[ ! -d "$PX_DIR" ]]; then
+            if ! sudo mkdir -p /px; then
+              echo ""
+              echo -e "\e[31mERROR:\e[0m Failed to create /px directory. Aborting installation."
+              echo ""
+              exit 16
+            fi
+          else
+            echo "Directory /px already exists. Continuing with installation."  
           fi
 
     check_config_file:
@@ -361,6 +353,11 @@ install:
 
               echo "TLS certificate files copied successfully."
           }
+
+          # Delete the existing configuration file if it exists. Helpful in case if user runs the installer multiple times.
+          if [[ -f "$CONFIG_FILE" ]]; then
+            sudo rm -f "$CONFIG_FILE" || log_error_and_exit "Failed to delete existing configuration file at $CONFIG_FILE."
+          fi
 
           # Check if CONFIG_FILE_PATH is set and not empty
           if [[ -z "$CONFIG_FILE_PATH" ]]; then
