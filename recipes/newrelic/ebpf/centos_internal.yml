@@ -9,6 +9,10 @@ repository: https://github.com/newrelic/newrelic-ebpf-agent
 installTargets:
   - type: host
     os: linux
+    platform: "fedora"
+    platformVersion: "((40|41|42)\\.?.*)"
+  - type: host
+    os: linux
     platform: "redhat"
     platformFamily: rhel
     platformVersion: "((8|9)\\.?.*)"
@@ -17,16 +21,32 @@ installTargets:
     platform: "centos"
     platformFamily: rhel
     platformVersion: "((9|10)\\.?.*)"
+  - type: host
+    os: linux
+    platform: amazon
+    platformFamily: rhel
+    platformVersion: "(2023\\.*)"
+  - type: host
+    os: linux
+    platform: amazon
+    platformFamily: rhel
+    platformVersion: "2"
+  
+  
     
 keywords:
   - eBPF
   - Agent
   - Linux
-  - CentOS 7
-  - CentOS 8
-  - RHEL 7
+  - CentOS 10
+  - CentOS 9
   - RHEL 8
   - RHEL 9
+  - Fedora 40
+  - Fedora 41
+  - Fedora 42
+  - Amazon Linux 2023
+  - Amazon Linux 2
 
 processMatch: []
 
@@ -43,11 +63,7 @@ install:
       cmds:
         - task: assert_pre_req
         - task: check_config_file
-        # - task: update_yum
-        # - task: add_gpg_key
-        # - task: add_nr_source
-        # - task: update_apt_nr_source
-        # - task: install_ebpf_agent
+        - task: install_ebpf_agent
 
     assert_pre_req:
       cmds:
@@ -134,6 +150,14 @@ install:
                 sudo mkdir -p "/etc/newrelic-ebpf-agent/" || log_error_and_exit "Failed to create directory /etc/newrelic-ebpf-agent/."
               fi
 
+              if [[ "$NEW_RELIC_REGION" == "staging" ]]; then
+                NEW_RELIC_OTLP_ENDPOINT="staging-otlp.nr-data.net:4317"
+              elif [[ "$NEW_RELIC_REGION" == "EU" ]]; then
+                NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:4317"
+              elif [[ "$NEW_RELIC_REGION" == "US" ]]; then
+                NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:4317"
+              fi       
+
               # Create the default configuration file
               sudo tee "$CONFIG_FILE" > /dev/null << EOS
           # -- The license key to use.
@@ -141,7 +165,7 @@ install:
           # -- Unique name for the deployment to identify data posting via eBPF Agent
           DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-}"
           # -- Endpoint to export data to Newrelic
-          OTLP_ENDPOINT=staging-otlp.nr-data.net:4317
+          OTLP_ENDPOINT="${NEW_RELIC_OTLP_ENDPOINT:-}"
           # -- To configure the log level in increasing order of verboseness. [OFF, FATAL, ERROR, WARNING, INFO, DEBUG]
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
@@ -407,73 +431,41 @@ install:
               fi
           fi
 
-    # update_yum:
-    #   cmds:
-    #     - |
-    #       # Get latest definitions and skip any failure because of deprecation
-    #       OPTIONS="-o DPkg::Lock::Timeout=60 -o Acquire::Check-Valid-Until=false"
-    #       if [ ! -z "$HTTPS_PROXY" ]; then
-    #         OPTIONS="$OPTIONS -o Acquire::Http::Proxy={{.HTTPS_PROXY}}"
-    #       fi
-    #       yum $OPTIONS update -yq
-    #   silent: true
-    #   ignore_error: true
+    install_ebpf_agent:
+      cmds:
+        - |
+          ARCH=$(uname -m)
+          REPO_URL=$(echo -n "{{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/linux/yum/el/{{.DISTRO_VERSION}}/$ARCH/newrelic-infra.repo")
+          IS_NEWRELIC_AVAILABLE=$(curl -Ls $REPO_URL | grep "\[newrelic-infra\]" | wc -l)
+          if [ $IS_NEWRELIC_AVAILABLE -eq 0 ] ; then
+            echo "newrelic infrastructure agent is not available for this architecture "$ARCH". See our documentation for installing manually https://docs.newrelic.com/docs/using-new-relic/cross-product-functions/install-configure/install-new-relic" >&2
+            exit 131
+          fi
 
-    # add_gpg_key:
-    #   cmds:
-    #     - |
-    #       # Remove the key from the legacy keyring if it exists
-    #       sudo rm -f /etc/apt/trusted.gpg.d/newrelic-ebpf.gpg 2>/dev/null
-    #       sudo rm -f /etc/apt/trusted.gpg 2>/dev/null
-    #       # Add the key to the correct directory
-    #       curl -s https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg | sudo gpg --dearmor --batch --yes -o /etc/apt/trusted.gpg.d/newrelic-ebpf.gpg
-    #   silent: true
-
-    # add_nr_source:
-    #   cmds:
-    #     - |
-    #       ARCH="amd64"
-    #       IS_ARM=$(uname -m | grep -i 'aarch64' | wc -l)
-    #       if [ $IS_ARM -gt 0 ] ; then
-    #         ARCH="arm64"
-    #       fi
-    #       printf "deb [arch="$ARCH"] https://download.newrelic.com/preview/linux/apt {{.DEBIAN_CODENAME}} main" | tee /etc/apt/sources.list.d/newrelic-ebpf.list > /dev/null
-    #   vars:
-    #     DEBIAN_CODENAME:
-    #       sh: awk -F= '/VERSION_CODENAME/ {print $2}' /etc/os-release
-    #   silent: true
-
-    # update_apt_nr_source:
-    #   cmds:
-    #     - |
-    #       # Get latest definitions and skip any failure because of deprecation
-    #       OPTIONS="-o DPkg::Lock::Timeout=60 -o Acquire::Check-Valid-Until=false"
-    #       if [ ! -z "$HTTPS_PROXY" ]; then
-    #         OPTIONS="$OPTIONS -o Acquire::Http::Proxy={{.HTTPS_PROXY}}"
-    #       fi
-    #       apt-get $OPTIONS update -qq -y
-    #   # apt will return an error if fails to update any of its sources. Ignore these errors and let the "install_infra" task fail.
-    #   ignore_error: true
-
-    # install_ebpf_agent:
-    #   cmds:
-    #     - |
-    #       ARCH=$(uname -m)
-    #       REPO_URL=$(echo -n "http://nr-downloads-ohai-staging.s3-website-us-east-1.amazonaws.com/preview/linux/yum/el/{{.DISTRO_VERSION}}/$ARCH/newrelic-infra.repo")
-    #       IS_NEWRELIC_AVAILABLE=$(curl -Ls $REPO_URL | grep "\[newrelic-infra\]" | wc -l)
-    #       if [ $IS_NEWRELIC_AVAILABLE -eq 0 ] ; then
-    #         echo "newrelic eBPF agent is not available for this architecture "$ARCH". See our documentation for installing manually" >&2
-    #         exit 131
-    #       fi
-
-    #       curl -s $REPO_URL -o /etc/yum.repos.d/newrelic-ebpf.repo
-    #       yum -y -q makecache --disablerepo='*' --enablerepo='newrelic-infra'
-    #       yum -y -q install newrelic-ebpf-agent
-    #   vars:
-    #     DISTRO_VERSION:
-    #       sh: |
-    #         rpm -E %{rhel}
-    #   silent: true
+          # Install specific version if provided, otherwise install latest
+          AGENT_VERSION={{.INFRASTRUCTURE_AGENT_INSTALLER_VERSION}}
+          VERSION_SUFFIX=""
+          if [ -n "$AGENT_VERSION" ]; then
+            VERSION_SUFFIX="-$AGENT_VERSION"
+          fi
+          
+          # Check NEW_RELIC_FIPS_ENABLED flag
+          if [ "${NEW_RELIC_FIPS_ENABLED:-false}" = "true" ]; then
+            echo "FIPS mode enabled. Installing newrelic-infra-fips${VERSION_SUFFIX}..."
+            curl -s $REPO_URL -o /etc/yum.repos.d/newrelic-infra.repo
+            yum -y -q makecache --disablerepo='*' --enablerepo='newrelic-infra'
+            yum -y -q install newrelic-infra-fips${VERSION_SUFFIX}
+          else
+            echo "FIPS mode not enabled. Installing newrelic-infra${VERSION_SUFFIX}..."
+            curl -s $REPO_URL -o /etc/yum.repos.d/newrelic-infra.repo
+            yum -y -q makecache --disablerepo='*' --enablerepo='newrelic-infra'
+            yum -y -q install newrelic-infra${VERSION_SUFFIX}
+          fi
+      vars:
+        DISTRO_VERSION:
+          sh: |
+            rpm -E %{rhel}
+      silent: true
 
 postInstall:
   info: |2
