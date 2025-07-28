@@ -429,13 +429,13 @@ install:
               else
                   log_error_and_exit "The provided path does not point to a valid file: $LOCAL_PACKAGE_PATH"
               fi
-          fi
+          fi  
 
     install_ebpf_agent:
       cmds:
         - |
           ARCH=$(uname -m)
-          REPO_URL=$(echo -n "http://nr-downloads-ohai-staging.s3-website-us-east-1.amazonaws.com/infrastructure_agent/linux/yum/el/{{.DISTRO_VERSION}}/$ARCH/newrelic-infra.repo")
+          REPO_URL=$(echo -n "https://download.newrelic.com/preview/linux/yum/el/{{.DISTRO_VERSION}}/$ARCH/newrelic-infra.repo")
           IS_NEWRELIC_AVAILABLE=$(curl -Ls $REPO_URL | grep "\[newrelic-infra\]" | wc -l)
           if [ $IS_NEWRELIC_AVAILABLE -eq 0 ] ; then
             echo "newrelic infrastructure agent is not available for this architecture "$ARCH". See our documentation for installing manually https://docs.newrelic.com/docs/using-new-relic/cross-product-functions/install-configure/install-new-relic" >&2
