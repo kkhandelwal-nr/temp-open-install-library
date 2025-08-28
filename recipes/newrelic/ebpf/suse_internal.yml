@@ -394,15 +394,15 @@ install:
               if [[ -f "$LOCAL_PACKAGE_PATH" ]]; then
                   echo "Installing the provided RPM package..."
                   # Attempt to install the local package directly.
-                  zypper --no-confirm install "$LOCAL_PACKAGE_PATH" || {
+                  zypper --non-interactive install "$LOCAL_PACKAGE_PATH" || {
                       echo "Failed to install the package. Resolving dependencies..."
                       # Update the package list to get the latest dependency information.
-                      zypper --no-confirm update || log_error_and_exit "Failed to perform zypper update."
+                      zypper --non-interactive update || log_error_and_exit "Failed to perform zypper update."
 
                       # Attempt to install again, this time with a more aggressive dependency resolution.
-                      zypper --no-confirm --force-resolution install "$LOCAL_PACKAGE_PATH" || log_error_and_exit "Failed to resolve dependencies for the RPM package."
+                      zypper --non-interactive --force-resolution install "$LOCAL_PACKAGE_PATH" || log_error_and_exit "Failed to resolve dependencies for the RPM package."
                   }
-                  echo "Package and its dependencies installed successfully."
+                  echo "RPM package and its dependencies installed successfully."
                   exit 123
               else
                   log_error_and_exit "The provided path does not point to a valid file: $LOCAL_PACKAGE_PATH"
