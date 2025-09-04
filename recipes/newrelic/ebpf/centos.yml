@@ -533,6 +533,22 @@ install:
           EOS
 
           echo "YAML configuration file created successfully at $CONFIG_FILE"
+    
+    install_linux_headers:
+      cmds:
+        - |
+          KERNEL_VERSION=$(uname -r)
+          echo "Installing kernel headers for kernel version: $KERNEL_VERSION"
+          if ! yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
+            echo ""
+            echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
+            echo ""
+<<<<<<< HEAD
+=======
+            # exit 20
+>>>>>>> d19f726f (Do not exit on linux headers installation failure)
+          fi
+      ignore_error: true
 
     install_ebpf_agent:
       cmds:
