@@ -415,6 +415,16 @@ install:
           if [[ -n "$LOCAL_PACKAGE_PATH" ]]; then
               echo "Local package path provided: $LOCAL_PACKAGE_PATH"
               if [[ -f "$LOCAL_PACKAGE_PATH" ]]; then
+
+                  KERNEL_VERSION=$(uname -r)
+                  echo "Installing kernel headers for kernel version: $KERNEL_VERSION"
+                  if ! yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
+                    echo ""
+                    echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
+                    echo ""
+                    exit 20
+                  fi
+                  echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."ignore_error: true
                   
                   echo "Installing the provided RPM package..."
                   yum install -y "$LOCAL_PACKAGE_PATH" || {
