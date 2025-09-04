@@ -9,6 +9,10 @@ repository: https://github.com/newrelic/newrelic-ebpf-agent
 installTargets:
   - type: host
     os: linux
+    platform: "fedora"
+    platformVersion: "((40|41|42)\\.?.*)"
+  - type: host
+    os: linux
     platform: "redhat"
     platformFamily: rhel
     platformVersion: "((8|9)\\.?.*)"
