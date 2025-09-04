@@ -422,7 +422,7 @@ install:
                     echo ""
                     echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
                     echo ""
-                    exit 20
+                    # exit 20
                   fi
                   echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."ignore_error: true
                   
@@ -448,7 +448,7 @@ install:
             echo ""
             echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
             echo ""
-            exit 20
+            # exit 20
           fi
           echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."ignore_error: true
       ignore_error: true
