@@ -112,8 +112,7 @@ install:
               exit 16
             fi
           else
-            echo "Directory /px already exists. Clearing its contents."
-            sudo rm -rf /px/*
+            echo "Directory /px already exists. Continuing with installation."
           fi
 
     check_config_file:
