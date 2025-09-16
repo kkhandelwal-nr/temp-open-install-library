@@ -462,10 +462,6 @@ install:
             echo ""
             echo -e "\e[31mERROR:\e[0m Failed to install linux headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
             echo ""
-<<<<<<< HEAD
-=======
-            # exit 20
->>>>>>> d19f726f (Do not exit on linux headers installation failure)
           fi
           echo "Linux headers installed successfully for kernel $KERNEL_VERSION."
       ignore_error: true
