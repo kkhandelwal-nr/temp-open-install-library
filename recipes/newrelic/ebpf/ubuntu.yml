@@ -140,11 +140,11 @@ install:
               fi
 
               if [[ "$NEW_RELIC_REGION" == "staging" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="staging-otlp.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="staging-otlp.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "EU" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "US" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:443"
               fi       
 
               # Create the default configuration file
@@ -462,10 +462,6 @@ install:
             echo ""
             echo -e "\e[31mERROR:\e[0m Failed to install linux headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
             echo ""
-<<<<<<< HEAD
-=======
-            # exit 20
->>>>>>> d19f726f (Do not exit on linux headers installation failure)
           fi
           echo "Linux headers installed successfully for kernel $KERNEL_VERSION."
       ignore_error: true
@@ -487,11 +483,11 @@ install:
               fi
 
               if [[ "$NEW_RELIC_REGION" == "staging" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="staging-otlp.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="staging-otlp.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "EU" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "US" ]]; then
-                NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:4317"
+                NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:443"
               fi       
 
               # Create the default configuration file
