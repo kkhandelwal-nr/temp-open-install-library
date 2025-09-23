@@ -661,7 +661,6 @@ install:
               fi
             fi
           }
-
       silent: true
     
     # When the eBPF agent is installed alongside Agent Control, the default services are disabled
