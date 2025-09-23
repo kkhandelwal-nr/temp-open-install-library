@@ -616,9 +616,6 @@ install:
               fi
             fi
           }
-
-          echo "eBPF agent package installed successfully."
-
       silent: true
     
     # When the eBPF agent is installed alongside Agent Control, the default services are disabled
