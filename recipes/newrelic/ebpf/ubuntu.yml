@@ -196,39 +196,39 @@ install:
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
-          PROTOCOLS_MYSQL_SPANS_ENABLED="false"
+          PROTOCOLS_MYSQL_SPANS_ENABLED="true"
           PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of PostgreSQL DB
           PROTOCOLS_PGSQL_ENABLED="true"
-          PROTOCOLS_PGSQL_SPANS_ENABLED="false"
+          PROTOCOLS_PGSQL_SPANS_ENABLED="true"
           PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Cassandra DB
           PROTOCOLS_CASS_ENABLED="true"
-          PROTOCOLS_CASS_SPANS_ENABLED="false"
+          PROTOCOLS_CASS_SPANS_ENABLED="true"
           PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Redis DB
           PROTOCOLS_REDIS_ENABLED="true"
-          PROTOCOLS_REDIS_SPANS_ENABLED="false"
+          PROTOCOLS_REDIS_SPANS_ENABLED="true"
           PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MongoDB
           PROTOCOLS_MONGODB_ENABLED="true"
-          PROTOCOLS_MONGODB_SPANS_ENABLED="false"
+          PROTOCOLS_MONGODB_SPANS_ENABLED="true"
           PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
-          PROTOCOLS_KAFKA_SPANS_ENABLED="false"
+          PROTOCOLS_KAFKA_SPANS_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
-          PROTOCOLS_AMQP_SPANS_ENABLED="false"
+          PROTOCOLS_AMQP_SPANS_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of DNS
-          PROTOCOLS_DNS_SPANS_ENABLED="false"
+          PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY=""
           EOS
 
@@ -539,39 +539,39 @@ install:
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
-          PROTOCOLS_MYSQL_SPANS_ENABLED="false"
+          PROTOCOLS_MYSQL_SPANS_ENABLED="true"
           PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of PostgreSQL DB
           PROTOCOLS_PGSQL_ENABLED="true"
-          PROTOCOLS_PGSQL_SPANS_ENABLED="false"
+          PROTOCOLS_PGSQL_SPANS_ENABLED="true"
           PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Cassandra DB
           PROTOCOLS_CASS_ENABLED="true"
-          PROTOCOLS_CASS_SPANS_ENABLED="false"
+          PROTOCOLS_CASS_SPANS_ENABLED="true"
           PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Redis DB
           PROTOCOLS_REDIS_ENABLED="true"
-          PROTOCOLS_REDIS_SPANS_ENABLED="false"
+          PROTOCOLS_REDIS_SPANS_ENABLED="true"
           PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MongoDB
           PROTOCOLS_MONGODB_ENABLED="true"
-          PROTOCOLS_MONGODB_SPANS_ENABLED="false"
+          PROTOCOLS_MONGODB_SPANS_ENABLED="true"
           PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
-          PROTOCOLS_KAFKA_SPANS_ENABLED="false"
+          PROTOCOLS_KAFKA_SPANS_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
-          PROTOCOLS_AMQP_SPANS_ENABLED="false"
+          PROTOCOLS_AMQP_SPANS_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY=""
 
           # -- To Enable/Disable the spans and sampling latency of DNS
-          PROTOCOLS_DNS_SPANS_ENABLED="false"
+          PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY=""
           EOS
 
@@ -752,13 +752,6 @@ install:
               fi
             fi
           }
-
-
-            
-        
-      
-
-
       silent: true
     
     # When the eBPF agent is installed alongside Agent Control, the default services are disabled
