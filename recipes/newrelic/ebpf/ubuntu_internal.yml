@@ -53,6 +53,14 @@ install:
         - task: disable_service_for_agent_control
 
     assert_pre_req:
+      status:
+        - |
+          if [ "${FORCE_INSTALL:-}" = "true" ]; then
+            echo "Force install enabled - skipping pre-requisite checks"
+            exit 0
+          fi
+          # If FORCE_INSTALL is not true, we want the task to run normally
+          exit 1
       cmds:
         - |
           IS_ROOT_OR_SUDO=$([ ! -z "$SUDO_USER" ] || [ $(whoami) = "root" ] && echo "true" || echo "false") # Assert root or sudo user
@@ -103,6 +111,29 @@ install:
             echo -e "\e[31mERROR:\e[0m curl is required to run the newrelic install. Please install curl and re-run the installation." >&2
             echo ""
             exit 15
+          fi
+        - |
+          # Check kernel version - eBPF agent requires kernel 5.4 or higher
+          KERNEL_VERSION=$(uname -r | cut -d'-' -f1)
+          KERNEL_MAJOR=$(echo $KERNEL_VERSION | cut -d'.' -f1)
+          KERNEL_MINOR=$(echo $KERNEL_VERSION | cut -d'.' -f2)
+          
+          # Convert to comparable format (e.g., 5.4 becomes 504, 4.19 becomes 419)
+          KERNEL_NUM=$((KERNEL_MAJOR * 100 + KERNEL_MINOR))
+          REQUIRED_KERNEL_NUM=504  # 5.4
+          
+          if [ $KERNEL_NUM -lt $REQUIRED_KERNEL_NUM ]; then
+            echo ""
+            echo -e "\e[31mERROR:\e[0m eBPF agent requires Linux kernel version 5.4 or higher." >&2
+            echo -e "Current kernel version: $KERNEL_VERSION" >&2
+            echo -e "Please upgrade your kernel to version 5.4 or higher and re-run the installation." >&2
+            echo ""
+            exit 17
+          fi
+        - |
+          # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
+          if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
+            NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
           fi
         - |
           if [[ ! -d "/px" ]]; then
@@ -158,7 +189,7 @@ install:
           # -- To configure the log level in increasing order of verboseness. [OFF, FATAL, ERROR, WARNING, INFO, DEBUG]
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
-          NEW_RELIC_LOG_FILE_PATH=""
+          NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
           # Regular expression pattern to match the specific name(s) of the entity set that you wish to exclude.
           DROP_DATA_FOR_ENTITY=""
           # -- Enable TLS communication between the eBPF client and agent.
@@ -404,6 +435,29 @@ install:
               echo "TLS is disabled. Skipping certificate generation and validation."
           fi
 
+          # Validate NEW_RELIC_LOG_FILE_PATH directory
+          if [[ -n "$NEW_RELIC_LOG_FILE_PATH" ]]; then
+            LOG_DIR=$(dirname "$NEW_RELIC_LOG_FILE_PATH")
+            if [[ ! -d "$LOG_DIR" ]]; then
+              echo ""
+              echo -e "\e[31mERROR:\e[0m The directory specified in NEW_RELIC_LOG_FILE_PATH does not exist: $LOG_DIR" >&2
+              echo -e "Please create the directory or provide a valid path and re-run the installation." >&2
+              echo ""
+              exit 18
+            fi
+            
+            # Check if the directory is writable
+            if [[ ! -w "$LOG_DIR" ]]; then
+              echo ""
+              echo -e "\e[31mERROR:\e[0m The directory specified in NEW_RELIC_LOG_FILE_PATH is not writable: $LOG_DIR" >&2
+              echo -e "Please ensure the directory has write permissions and re-run the installation." >&2
+              echo ""
+              exit 19
+            fi
+            
+            echo "NEW_RELIC_LOG_FILE_PATH validation passed: $NEW_RELIC_LOG_FILE_PATH"
+          fi
+
           if [[ -n "$LOCAL_PACKAGE_PATH" ]]; then
               echo "Local Debian package path provided: $LOCAL_PACKAGE_PATH"
               if [[ -f "$LOCAL_PACKAGE_PATH" ]]; then
@@ -528,7 +582,7 @@ install:
           # -- To configure the log level in increasing order of verboseness. [OFF, FATAL, ERROR, WARNING, INFO, DEBUG]
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
-          NEW_RELIC_LOG_FILE_PATH=""
+          NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
           # Regular expression pattern to match the specific name(s) of the entity set that you wish to exclude.
           DROP_DATA_FOR_ENTITY=""
           # -- Enable TLS communication between the eBPF client and agent.
