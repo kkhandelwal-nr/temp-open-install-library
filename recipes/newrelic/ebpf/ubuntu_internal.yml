@@ -442,8 +442,8 @@ install:
               exit 20
             fi
             echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
-            echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
           fi
+          echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
 
           if [[ -n "$LOCAL_PACKAGE_PATH" ]]; then
               echo "Local Debian package path provided: $LOCAL_PACKAGE_PATH"
@@ -812,8 +812,8 @@ install:
                   exit 20
                 fi
                 echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
-                echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
               fi
+              echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
 
               sudo mkdir -p /px;
               sleep 5s;
