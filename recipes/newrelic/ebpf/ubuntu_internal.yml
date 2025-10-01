@@ -131,11 +131,6 @@ install:
             exit 17
           fi
         - |
-          # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
-          if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
-            NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
-          fi
-        - |
           if [[ ! -d "/px" ]]; then
             if ! sudo mkdir -p "/px"; then
               echo ""
@@ -404,6 +399,11 @@ install:
             sudo rm -f "$CONFIG_FILE" || log_error_and_exit "Failed to delete existing configuration file at $CONFIG_FILE."
           fi
 
+          # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
+          if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
+            NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
+          fi
+
           # Check if CONFIG_FILE_PATH is set and not empty
           if [[ -z "$CONFIG_FILE_PATH" ]]; then
             create_default_config_file
@@ -434,28 +434,15 @@ install:
           else
               echo "TLS is disabled. Skipping certificate generation and validation."
           fi
-
-          # Validate NEW_RELIC_LOG_FILE_PATH directory
-          if [[ -n "$NEW_RELIC_LOG_FILE_PATH" ]]; then
-            LOG_DIR=$(dirname "$NEW_RELIC_LOG_FILE_PATH")
-            if [[ ! -d "$LOG_DIR" ]]; then
-              echo ""
-              echo -e "\e[31mERROR:\e[0m The directory specified in NEW_RELIC_LOG_FILE_PATH does not exist: $LOG_DIR" >&2
-              echo -e "Please create the directory or provide a valid path and re-run the installation." >&2
-              echo ""
-              exit 18
+          
+          if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
+            echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
+            if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+              echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
+              exit 20
             fi
-            
-            # Check if the directory is writable
-            if [[ ! -w "$LOG_DIR" ]]; then
-              echo ""
-              echo -e "\e[31mERROR:\e[0m The directory specified in NEW_RELIC_LOG_FILE_PATH is not writable: $LOG_DIR" >&2
-              echo -e "Please ensure the directory has write permissions and re-run the installation." >&2
-              echo ""
-              exit 19
-            fi
-            
-            echo "NEW_RELIC_LOG_FILE_PATH validation passed: $NEW_RELIC_LOG_FILE_PATH"
+            echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
+            echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
           fi
 
           if [[ -n "$LOCAL_PACKAGE_PATH" ]]; then
@@ -794,6 +781,12 @@ install:
 
           apt-get $OPTIONS install -yq --no-install-recommends newrelic-ebpf-agent || {
             if [[ ! -f "$CONFIG_FILE" ]]; then
+
+              # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
+              if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
+                NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
+              fi
+
               # Check if CONFIG_FILE_PATH is set and not empty
               if [[ -z "$CONFIG_FILE_PATH" ]]; then
                 create_default_config_file
@@ -810,6 +803,16 @@ install:
                   check_and_autogenerate_cert
               else
                   echo "TLS is disabled. Skipping certificate generation and validation."
+              fi
+
+              if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
+                echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
+                if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+                  echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
+                  exit 20
+                fi
+                echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
+                echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
               fi
 
               sudo mkdir -p /px;
