@@ -185,8 +185,8 @@ install:
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
-          # Vizier server port on which agent receives pxl scripts from the client.
-          VIZIER_PORT="12345"
+          # Regular expression pattern to match the specific name(s) of the entity set that you wish to exclude.
+          DROP_DATA_FOR_ENTITY=""
           # -- Enable TLS communication between the eBPF client and agent.
           TLS_ENABLED="true"
           # -- TLS Certificate Option 1: This must be enabled to create a self-signed cert and secret for you.
@@ -453,6 +453,11 @@ install:
             NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
           fi
 
+          # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
+          if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
+            NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
+          fi
+
           # Check if CONFIG_FILE_PATH is set and not empty
           if [[ -z "$CONFIG_FILE_PATH" ]]; then
             create_default_config_file
@@ -486,7 +491,7 @@ install:
           
           if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
             echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
-            if ! mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+            if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
               echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
               exit 20
             fi
@@ -591,8 +596,8 @@ install:
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
-          # Vizier server port on which agent receives pxl scripts from the client.
-          VIZIER_PORT="12345"
+          # Regular expression pattern to match the specific name(s) of the entity set that you wish to exclude.
+          DROP_DATA_FOR_ENTITY=""
           # -- Enable TLS communication between the eBPF client and agent.
           TLS_ENABLED="true"
           # -- TLS Certificate Option 1: This must be enabled to create a self-signed cert and secret for you.
@@ -877,7 +882,7 @@ install:
 
               if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
                 echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
-                if ! mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+                if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
                   echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
                   exit 20
                 fi
@@ -885,7 +890,7 @@ install:
               fi
               echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
 
-              mkdir -p /px;
+              sudo mkdir -p /px;
               sleep 5s;
               systemctl restart newrelic-ebpf-agent.service
               systemctl restart newrelic-ebpf-agent-client.service
@@ -906,6 +911,7 @@ install:
               fi
             fi
           }
+
       silent: true
     
     # When the eBPF agent is installed alongside Agent Control, the default services are disabled
