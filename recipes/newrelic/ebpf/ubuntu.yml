@@ -412,11 +412,6 @@ install:
             NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
           fi
 
-          # Set default log file path if NEW_RELIC_LOG_FILE_PATH is empty
-          if [ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]; then
-            NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
-          fi
-
           # Check if CONFIG_FILE_PATH is set and not empty
           if [[ -z "$CONFIG_FILE_PATH" ]]; then
             create_default_config_file
@@ -450,7 +445,7 @@ install:
           
           if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
             echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
-            if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+            if ! mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
               echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
               exit 20
             fi
@@ -800,7 +795,7 @@ install:
 
               if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
                 echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
-                if ! sudo mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
+                if ! mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
                   echo -e "\e[31mERROR:\e[0m Failed to create directory $NEW_RELIC_LOG_FILE_PATH. Aborting installation."
                   exit 20
                 fi
@@ -808,7 +803,7 @@ install:
               fi
               echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
 
-              sudo mkdir -p /px;
+              mkdir -p /px;
               sleep 5s;
               systemctl restart newrelic-ebpf-agent.service
               systemctl restart newrelic-ebpf-agent-client.service
