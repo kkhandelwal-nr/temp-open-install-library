@@ -228,7 +228,7 @@ install:
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           INCLUDE_PORT_IN_SERVER_ENTITY_IDENTIFICATION="true"
           # -- Enable APM data reporting. When enabled, the agent collects and reports application performance monitoring data
-          APM_DATA_REPORTING="true"
+          APM_DATA_REPORTING="false"
           # -- Enable TCP statistics reporting. When enabled, the agent collects and reports low level tcp metrics and starts network monitoring
           TCP_STATS_REPORTING="true"
 
@@ -581,7 +581,7 @@ install:
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           INCLUDE_PORT_IN_SERVER_ENTITY_IDENTIFICATION="true"
           # -- Enable APM data reporting. When enabled, the agent collects and reports application performance monitoring data
-          APM_DATA_REPORTING="true"
+          APM_DATA_REPORTING="false"
           # -- Enable TCP statistics reporting. When enabled, the agent collects and reports low level tcp metrics and starts network monitoring
           TCP_STATS_REPORTING="true"
 
