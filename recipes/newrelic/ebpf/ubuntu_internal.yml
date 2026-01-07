@@ -915,7 +915,6 @@ install:
               mkdir -p /px;
               sleep 5s;
               systemctl restart newrelic-ebpf-agent.service
-              systemctl restart newrelic-ebpf-agent-client.service
             else
               echo "Error: newrelic-ebpf-agent installation failed"
               echo "Attempting to configure the packages again"
@@ -947,8 +946,6 @@ install:
           fi
       cmds:
         - |
-          sudo systemctl stop newrelic-ebpf-agent-client
-          sudo systemctl disable newrelic-ebpf-agent-client
           sudo systemctl stop newrelic-ebpf-agent
           sudo systemctl disable newrelic-ebpf-agent
       ignore_error: true

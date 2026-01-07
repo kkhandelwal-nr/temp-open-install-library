@@ -888,7 +888,6 @@ install:
               mkdir -p /px;
               sleep 5s;
               systemctl restart newrelic-ebpf-agent.service
-              systemctl restart newrelic-ebpf-agent-client.service
             fi
           fi
       vars:
@@ -908,8 +907,6 @@ install:
           fi
       cmds:
         - |
-          sudo systemctl stop newrelic-ebpf-agent-client
-          sudo systemctl disable newrelic-ebpf-agent-client
           sudo systemctl stop newrelic-ebpf-agent
           sudo systemctl disable newrelic-ebpf-agent
       ignore_error: true
