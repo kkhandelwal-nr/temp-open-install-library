@@ -79,14 +79,6 @@ install:
             exit 10
           fi
         - |
-          IS_OPENSSL_INSTALLED=$(which openssl | wc -l)
-          if [ $IS_OPENSSL_INSTALLED -eq 0 ] ; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m openssl is required to run the newrelic install. Please install openssl and re-run the installation." >&2
-            echo ""
-            exit 14
-          fi
-        - |
           IS_UNAME_INSTALLED=$(which uname | wc -l)
           if [ $IS_UNAME_INSTALLED -eq 0 ] ; then
             echo ""
@@ -185,21 +177,6 @@ install:
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
-          # Vizier server port on which agent receives pxl scripts from the client.
-          VIZIER_PORT="12345"
-          # -- Enable TLS communication between the eBPF client and agent.
-          TLS_ENABLED="true"
-          # -- TLS Certificate Option 1: This must be enabled to create a self-signed cert and secret for you.
-          TLS_AUTOGENERATE_CERT_ENABLED="true"
-          # -- Certificates path.
-          TLS_CERT_PATH="/etc/newrelic-ebpf-agent/certs/"
-          # TLS Certificate Option 2: Use your own self-signed certificate. TLS_AUTOGENERATE_CERT_ENABLED must be disabled, and TLS_CERT_FILE, TLS_KEY_FILE, and TLS_CA_FILE must be set.
-          # -- Path to your own PEM-encoded certificate.
-          TLS_CERT_FILE=""
-          # -- Path to your own PEM-encoded private key.
-          TLS_KEY_FILE=""
-          # -- Path to the CA cert.
-          TLS_CA_FILE=""
           # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
           TABLE_STORE_DATA_LIMIT_MB=250
           # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use. 
@@ -338,111 +315,6 @@ install:
               fi
           }
 
-          check_and_autogenerate_cert() {
-
-              echo "Checking if TLS certificate autogeneration is enabled..."
-              # Check if TLS_AUTOGENERATE_CERT_ENABLED is set to null or empty
-              if [[ -z "$TLS_AUTOGENERATE_CERT_ENABLED" ]]; then
-                  echo "TLS_AUTOGENERATE_CERT_ENABLED is not set. Defaulting to true."
-                  TLS_AUTOGENERATE_CERT_ENABLED="true"
-              fi
-
-              # Check if TLS_AUTOGENERATE_CERT_ENABLED is set to True/true
-              if [[ "$TLS_AUTOGENERATE_CERT_ENABLED" == "True" || "$TLS_AUTOGENERATE_CERT_ENABLED" == "true" ]]; then
-                  generate_tls_cert
-              else
-                  echo "Autogenerating TLS certificate skipped..."
-                  validate_and_copy_tls_files
-              fi
-          }
-
-          ensure_tls_certs_directory(){
-              # Check if TLS_CERT_PATH is null or empty
-              if [[ -z "$TLS_CERT_PATH" ]]; then
-                  echo "TLS_CERT_PATH is not set or is empty. Placing certs in the directory /etc/newrelic-ebpf-agent/certs/"
-                  TLS_CERT_PATH="/etc/newrelic-ebpf-agent/certs/"
-              fi
-
-              # Create the directory if it does not exist
-              if [[ ! -d "$TLS_CERT_PATH" ]]; then
-                  echo "Creating directory for certificates: $TLS_CERT_PATH"
-                  mkdir -p "$TLS_CERT_PATH" || log_error_and_exit "Failed to create directory $TLS_CERT_PATH."
-              fi
-          }
-
-          generate_tls_cert() {
-
-              ensure_tls_certs_directory
-              echo "Autogenerating TLS certificates in $TLS_CERT_PATH."
-
-              # Create an OpenSSL configuration file for generating certificates
-              tee "$TLS_CERT_PATH/ssl.conf" > /dev/null << EOS
-          [ req ]
-          default_bits       = 4096
-          distinguished_name = req_distinguished_name
-          req_extensions     = req_ext
-
-          [ req_distinguished_name ]
-
-          [ req_ext ]
-          subjectAltName = @alt_names
-
-          [alt_names]
-          DNS.1   = localhost
-          EOS
-
-              # Generate a private key for the Certificate Authority (CA)
-              openssl genrsa -out "$TLS_CERT_PATH/ca.key" 4096 || log_error_and_exit "Failed to generate CA private key."
-
-              # Create a self-signed certificate for the CA
-              openssl req -new -x509 -sha256 -days 730 -key "$TLS_CERT_PATH/ca.key" -out "$TLS_CERT_PATH/ca.crt" -subj "/O=eBPF/CN=localhost" || log_error_and_exit "Failed to generate CA certificate."
-
-              # Generate a private key for the server
-              openssl genrsa -out "$TLS_CERT_PATH/tls.key" 4096 || log_error_and_exit "Failed to generate server private key."
-
-              # Create a certificate signing request (CSR) for the server
-              openssl req -new -sha256 -key "$TLS_CERT_PATH/tls.key" -out "$TLS_CERT_PATH/server.csr" -config "$TLS_CERT_PATH/ssl.conf" -subj "/O=eBPF/CN=localhost" || log_error_and_exit "Failed to generate server CSR."
-
-              # Sign the server CSR with the CA certificate to create the server certificate
-              openssl x509 -req -sha256 -days 730 -in "$TLS_CERT_PATH/server.csr" -CA "$TLS_CERT_PATH/ca.crt" -CAkey "$TLS_CERT_PATH/ca.key" -set_serial 01 \
-                  -out "$TLS_CERT_PATH/tls.crt" -extensions req_ext -extfile "$TLS_CERT_PATH/ssl.conf" || log_error_and_exit "Failed to generate server certificate."
-
-              echo "TLS certificates generated successfully in $TLS_CERT_PATH."
-          }
-
-
-          validate_and_copy_tls_files() {
-              echo "Validating TLS environment variables..."
-
-              # Check if any of the variables are empty
-              if [[ -z "$TLS_CERT_FILE" || -z "$TLS_KEY_FILE" || -z "$TLS_CA_FILE" ]]; then
-                  log_error_and_exit "All three environment variables (TLS_CERT_FILE, TLS_KEY_FILE, TLS_CA_FILE) are required if $TLS_AUTOGENERATE_CERT_ENABLED is not set to True/true."
-              fi
-
-              # Check if the file paths provided in the variables are valid
-              if [[ ! -f "$TLS_CERT_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_CERT_FILE ($TLS_CERT_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              if [[ ! -f "$TLS_KEY_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_KEY_FILE ($TLS_KEY_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              if [[ ! -f "$TLS_CA_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_CA_FILE ($TLS_CA_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              ensure_tls_certs_directory
-
-              # Copy the files to the destination directory
-              echo "Copying TLS certificate files to $TLS_CERT_PATH..."
-              cp "$TLS_CERT_FILE" "$TLS_CERT_PATH/tls.crt" || log_error_and_exit "Failed to copy TLS_CERT_FILE to $TLS_CERT_PATH/tls.crt."
-              cp "$TLS_KEY_FILE" "$TLS_CERT_PATH/tls.key" || log_error_and_exit "Failed to copy TLS_KEY_FILE to $TLS_CERT_PATH/tls.key."
-              cp "$TLS_CA_FILE" "$TLS_CERT_PATH/ca.crt" || log_error_and_exit "Failed to copy TLS_CA_FILE to $TLS_CERT_PATH/tls.key."
-
-              echo "TLS certificate files copied successfully."
-          }
-
           # Delete the existing configuration file if it exists. Helpful in case if user runs the installer multiple times.
           if [[ -f "$CONFIG_FILE" ]]; then
             rm -f "$CONFIG_FILE" || log_error_and_exit "Failed to delete existing configuration file at $CONFIG_FILE."
@@ -468,22 +340,8 @@ install:
           if [[ -z "$DEPLOYMENT_NAME" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
               log_error_and_exit "DEPLOYMENT_NAME is empty. Aborting installation."
           fi
-          echo "Required config is found."   
+          echo "Required config is found."
 
-          echo "Checking if TLS is enabled..."
-          # Check for TLS_ENABLED is set to null or empty
-          if [[ -z "$TLS_ENABLED" ]]; then
-              echo "TLS_ENABLED is not set in the configuration file. Setting it to true by default."
-              TLS_ENABLED="true"
-          fi
-
-          # Step 5: Check if TLS_ENABLED is set to True/true
-          if [[ "$TLS_ENABLED" == "True" || "$TLS_ENABLED" == "true" ]]; then
-              check_and_autogenerate_cert
-          else
-              echo "TLS is disabled. Skipping certificate generation and validation."
-          fi
-          
           if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
             echo "Directory $NEW_RELIC_LOG_FILE_PATH does not exist. Attempting to create it..."
             if ! mkdir -p "$NEW_RELIC_LOG_FILE_PATH"; then
@@ -619,21 +477,6 @@ install:
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
-          # Vizier server port on which agent receives pxl scripts from the client.
-          VIZIER_PORT="12345"
-          # -- Enable TLS communication between the eBPF client and agent.
-          TLS_ENABLED="true"
-          # -- TLS Certificate Option 1: This must be enabled to create a self-signed cert and secret for you.
-          TLS_AUTOGENERATE_CERT_ENABLED="true"
-          # -- Certificates path.
-          TLS_CERT_PATH="/etc/newrelic-ebpf-agent/certs/"
-          # TLS Certificate Option 2: Use your own self-signed certificate. TLS_AUTOGENERATE_CERT_ENABLED must be disabled, and TLS_CERT_FILE, TLS_KEY_FILE, and TLS_CA_FILE must be set.
-          # -- Path to your own PEM-encoded certificate.
-          TLS_CERT_FILE=""
-          # -- Path to your own PEM-encoded private key.
-          TLS_KEY_FILE=""
-          # -- Path to the CA cert.
-          TLS_CA_FILE=""
           # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
           TABLE_STORE_DATA_LIMIT_MB=250
           # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use. 
@@ -771,111 +614,6 @@ install:
               fi
           }
 
-          check_and_autogenerate_cert() {
-
-              echo "Checking if TLS certificate autogeneration is enabled..."
-              # Check if TLS_AUTOGENERATE_CERT_ENABLED is set to null or empty
-              if [[ -z "$TLS_AUTOGENERATE_CERT_ENABLED" ]]; then
-                  echo "TLS_AUTOGENERATE_CERT_ENABLED is not set. Defaulting to true."
-                  TLS_AUTOGENERATE_CERT_ENABLED="true"
-              fi
-
-              # Check if TLS_AUTOGENERATE_CERT_ENABLED is set to True/true
-              if [[ "$TLS_AUTOGENERATE_CERT_ENABLED" == "True" || "$TLS_AUTOGENERATE_CERT_ENABLED" == "true" ]]; then
-                  generate_tls_cert
-              else
-                  echo "Autogenerating TLS certificate skipped..."
-                  validate_and_copy_tls_files
-              fi
-          }
-
-          ensure_tls_certs_directory(){
-              # Check if TLS_CERT_PATH is null or empty
-              if [[ -z "$TLS_CERT_PATH" ]]; then
-                  echo "TLS_CERT_PATH is not set or is empty. Placing certs in the directory /etc/newrelic-ebpf-agent/certs/"
-                  TLS_CERT_PATH="/etc/newrelic-ebpf-agent/certs/"
-              fi
-
-              # Create the directory if it does not exist
-              if [[ ! -d "$TLS_CERT_PATH" ]]; then
-                  echo "Creating directory for certificates: $TLS_CERT_PATH"
-                  mkdir -p "$TLS_CERT_PATH" || log_error_and_exit "Failed to create directory $TLS_CERT_PATH."
-              fi
-          }
-
-          generate_tls_cert() {
-
-              ensure_tls_certs_directory
-              echo "Autogenerating TLS certificates in $TLS_CERT_PATH."
-
-              # Create an OpenSSL configuration file for generating certificates
-              tee "$TLS_CERT_PATH/ssl.conf" > /dev/null << EOS
-          [ req ]
-          default_bits       = 4096
-          distinguished_name = req_distinguished_name
-          req_extensions     = req_ext
-
-          [ req_distinguished_name ]
-
-          [ req_ext ]
-          subjectAltName = @alt_names
-
-          [alt_names]
-          DNS.1   = localhost
-          EOS
-
-              # Generate a private key for the Certificate Authority (CA)
-              openssl genrsa -out "$TLS_CERT_PATH/ca.key" 4096 || log_error_and_exit "Failed to generate CA private key."
-
-              # Create a self-signed certificate for the CA
-              openssl req -new -x509 -sha256 -days 730 -key "$TLS_CERT_PATH/ca.key" -out "$TLS_CERT_PATH/ca.crt" -subj "/O=eBPF/CN=localhost" || log_error_and_exit "Failed to generate CA certificate."
-
-              # Generate a private key for the server
-              openssl genrsa -out "$TLS_CERT_PATH/tls.key" 4096 || log_error_and_exit "Failed to generate server private key."
-
-              # Create a certificate signing request (CSR) for the server
-              openssl req -new -sha256 -key "$TLS_CERT_PATH/tls.key" -out "$TLS_CERT_PATH/server.csr" -config "$TLS_CERT_PATH/ssl.conf" -subj "/O=eBPF/CN=localhost" || log_error_and_exit "Failed to generate server CSR."
-
-              # Sign the server CSR with the CA certificate to create the server certificate
-              openssl x509 -req -sha256 -days 730 -in "$TLS_CERT_PATH/server.csr" -CA "$TLS_CERT_PATH/ca.crt" -CAkey "$TLS_CERT_PATH/ca.key" -set_serial 01 \
-                  -out "$TLS_CERT_PATH/tls.crt" -extensions req_ext -extfile "$TLS_CERT_PATH/ssl.conf" || log_error_and_exit "Failed to generate server certificate."
-
-              echo "TLS certificates generated successfully in $TLS_CERT_PATH."
-          }
-
-
-          validate_and_copy_tls_files() {
-              echo "Validating TLS environment variables..."
-
-              # Check if any of the variables are empty
-              if [[ -z "$TLS_CERT_FILE" || -z "$TLS_KEY_FILE" || -z "$TLS_CA_FILE" ]]; then
-                  log_error_and_exit "All three environment variables (TLS_CERT_FILE, TLS_KEY_FILE, TLS_CA_FILE) are required if $TLS_AUTOGENERATE_CERT_ENABLED is not set to True/true."
-              fi
-
-              # Check if the file paths provided in the variables are valid
-              if [[ ! -f "$TLS_CERT_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_CERT_FILE ($TLS_CERT_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              if [[ ! -f "$TLS_KEY_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_KEY_FILE ($TLS_KEY_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              if [[ ! -f "$TLS_CA_FILE" ]]; then
-                  log_error_and_exit "The file path specified in TLS_CA_FILE ($TLS_CA_FILE) is invalid, does not exist, or is a directory."
-              fi
-
-              ensure_tls_certs_directory
-
-              # Copy the files to the destination directory
-              echo "Copying TLS certificate files to $TLS_CERT_PATH..."
-              cp "$TLS_CERT_FILE" "$TLS_CERT_PATH/tls.crt" || log_error_and_exit "Failed to copy TLS_CERT_FILE to $TLS_CERT_PATH/tls.crt."
-              cp "$TLS_KEY_FILE" "$TLS_CERT_PATH/tls.key" || log_error_and_exit "Failed to copy TLS_KEY_FILE to $TLS_CERT_PATH/tls.key."
-              cp "$TLS_CA_FILE" "$TLS_CERT_PATH/ca.crt" || log_error_and_exit "Failed to copy TLS_CA_FILE to $TLS_CERT_PATH/tls.key."
-
-              echo "TLS certificate files copied successfully."
-          }
-
           apt-get $OPTIONS install -yq --no-install-recommends newrelic-ebpf-agent || {
             if [[ ! -f "$CONFIG_FILE" ]]; then
 
@@ -889,17 +627,6 @@ install:
                 create_default_config_file
               else
                 check_custom_config_file $CONFIG_FILE_PATH
-              fi
-
-              if [[ -z "$TLS_ENABLED" ]]; then
-                echo "TLS_ENABLED is not set in the configuration file. Setting it to true by default."
-                TLS_ENABLED="true"
-              fi
-
-              if [[ "$TLS_ENABLED" == "True" || "$TLS_ENABLED" == "true" ]]; then
-                  check_and_autogenerate_cert
-              else
-                  echo "TLS is disabled. Skipping certificate generation and validation."
               fi
 
               if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
