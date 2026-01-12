@@ -239,6 +239,8 @@ install:
           # Metrics are sent by default when a protocol is enabled and it supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
           # PROTOCOLS_<protocol-name>_SPANS_SAMPLING_LATENCY represents the sampling latency threshold for the spans to export. [Options: p1, p10, p50, p90, p99].
 
+          # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit
+          PROTOCOLS_SPANS_UNLINKED_MAX="100"
           # -- To Enable/Disable the metrics, spans, sampling of latency and error rate of HTTP
           PROTOCOLS_HTTP_ENABLED="true"
           PROTOCOLS_HTTP_SPANS_ENABLED="true"
@@ -249,39 +251,39 @@ install:
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
           PROTOCOLS_MYSQL_SPANS_ENABLED="true"
-          PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of PostgreSQL DB
           PROTOCOLS_PGSQL_ENABLED="true"
           PROTOCOLS_PGSQL_SPANS_ENABLED="true"
-          PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Cassandra DB
           PROTOCOLS_CASS_ENABLED="true"
           PROTOCOLS_CASS_SPANS_ENABLED="true"
-          PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Redis DB
           PROTOCOLS_REDIS_ENABLED="true"
           PROTOCOLS_REDIS_SPANS_ENABLED="true"
-          PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MongoDB
           PROTOCOLS_MONGODB_ENABLED="true"
           PROTOCOLS_MONGODB_SPANS_ENABLED="true"
-          PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
           PROTOCOLS_KAFKA_SPANS_ENABLED="true"
-          PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
           PROTOCOLS_AMQP_SPANS_ENABLED="true"
-          PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of DNS
           PROTOCOLS_DNS_SPANS_ENABLED="true"
-          PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
           EOS
 
               source "$CONFIG_FILE"
@@ -538,6 +540,8 @@ install:
           # Metrics are sent by default when a protocol is enabled and it supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
           # PROTOCOLS_<protocol-name>_SPANS_SAMPLING_LATENCY represents the sampling latency threshold for the spans to export. [Options: p1, p10, p50, p90, p99].
 
+          # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit
+          PROTOCOLS_SPANS_UNLINKED_MAX="100"
           # -- To Enable/Disable the metrics, spans, sampling of latency and error rate of HTTP
           PROTOCOLS_HTTP_ENABLED="true"
           PROTOCOLS_HTTP_SPANS_ENABLED="true"
@@ -548,39 +552,39 @@ install:
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
           PROTOCOLS_MYSQL_SPANS_ENABLED="true"
-          PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_MYSQL_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of PostgreSQL DB
           PROTOCOLS_PGSQL_ENABLED="true"
           PROTOCOLS_PGSQL_SPANS_ENABLED="true"
-          PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_PGSQL_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Cassandra DB
           PROTOCOLS_CASS_ENABLED="true"
           PROTOCOLS_CASS_SPANS_ENABLED="true"
-          PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_CASS_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of Redis DB
           PROTOCOLS_REDIS_ENABLED="true"
           PROTOCOLS_REDIS_SPANS_ENABLED="true"
-          PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_REDIS_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MongoDB
           PROTOCOLS_MONGODB_ENABLED="true"
           PROTOCOLS_MONGODB_SPANS_ENABLED="true"
-          PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
           PROTOCOLS_KAFKA_SPANS_ENABLED="true"
-          PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
           PROTOCOLS_AMQP_SPANS_ENABLED="true"
-          PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of DNS
           PROTOCOLS_DNS_SPANS_ENABLED="true"
-          PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY=""
+          PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
           EOS
 
               source "$CONFIG_FILE"
