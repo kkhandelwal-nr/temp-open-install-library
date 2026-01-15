@@ -221,7 +221,7 @@ install:
           KEEP_APM_DATA_FOR_ENTITY_NAME=""
 
           # -- Drop eBPF APM data for applications/entities that have NewRelic/OpenTelemetry APM agents running
-          DROP_APM_DATA_FOR_APM_AGENT_ENABLED_ENTITY="false"
+          DROP_EAPM_DATA_FOR_APM_AGENT_ENABLED_ENTITY="true"
 
           # -- Network metrics Data filter / TCP stats filters
 
@@ -522,7 +522,7 @@ install:
           KEEP_APM_DATA_FOR_ENTITY_NAME=""
 
           # -- Drop eBPF APM data for applications/entities that have NewRelic/OpenTelemetry APM agents running
-          DROP_APM_DATA_FOR_APM_AGENT_ENABLED_ENTITY="false"
+          DROP_EAPM_DATA_FOR_APM_AGENT_ENABLED_ENTITY="true"
 
           # -- Network metrics Data filter / TCP stats filters
 
