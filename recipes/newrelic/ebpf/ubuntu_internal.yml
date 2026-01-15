@@ -284,6 +284,16 @@ install:
           # -- To Enable/Disable the spans and sampling latency of DNS
           PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
+
+          # -- To Enable/Disable the metrics, spans, sampling latency rate of Dynamo DB
+          PROTOCOLS_DYNAMODB_ENABLED="true"
+          PROTOCOLS_DYNAMODB_SPANS_ENABLED="true"
+          PROTOCOLS_DYNAMODB_SPANS_SAMPLING_LATENCY="p50"
+
+          # -- To Enable/Disable the metrics, spans, sampling latency rate of MSSQL DB
+          PROTOCOLS_MSSQL_ENABLED="true"
+          PROTOCOLS_MSSQL_SPANS_ENABLED="true"
+          PROTOCOLS_MSSQL_SPANS_SAMPLING_LATENCY="p50"
           EOS
 
               source "$CONFIG_FILE"
@@ -585,6 +595,16 @@ install:
           # -- To Enable/Disable the spans and sampling latency of DNS
           PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
+
+          # -- To Enable/Disable the metrics, spans, sampling latency rate of Dynamo DB
+          PROTOCOLS_DYNAMODB_ENABLED="true"
+          PROTOCOLS_DYNAMODB_SPANS_ENABLED="true"
+          PROTOCOLS_DYNAMODB_SPANS_SAMPLING_LATENCY="p50"
+
+          # -- To Enable/Disable the metrics, spans, sampling latency rate of MSSQL DB
+          PROTOCOLS_MSSQL_ENABLED="true"
+          PROTOCOLS_MSSQL_SPANS_ENABLED="true"
+          PROTOCOLS_MSSQL_SPANS_SAMPLING_LATENCY="p50"
           EOS
 
               source "$CONFIG_FILE"
