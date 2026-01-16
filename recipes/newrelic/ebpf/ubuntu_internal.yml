@@ -274,14 +274,17 @@ install:
           PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
+          PROTOCOLS_KAFKA_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
+          PROTOCOLS_AMQP_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of DNS
+          PROTOCOLS_DNS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
 
@@ -585,14 +588,17 @@ install:
           PROTOCOLS_MONGODB_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of Kafka
+          PROTOCOLS_KAFKA_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_ENABLED="true"
           PROTOCOLS_KAFKA_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of AMQP
+          PROTOCOLS_AMQP_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_ENABLED="true"
           PROTOCOLS_AMQP_SPANS_SAMPLING_LATENCY="p50"
 
           # -- To Enable/Disable the spans and sampling latency of DNS
+          PROTOCOLS_DNS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_ENABLED="true"
           PROTOCOLS_DNS_SPANS_SAMPLING_LATENCY="p50"
 
