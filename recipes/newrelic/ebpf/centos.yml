@@ -583,7 +583,12 @@ install:
           
           curl -s $REPO_URL -o /etc/yum.repos.d/newrelic-infra.repo
           yum -y -q makecache --disablerepo='*' --enablerepo='newrelic-infra'
-          yum -y -q install newrelic-ebpf-agent
+          yum -y -q install newrelic-ebpf-agent || {
+            echo ""
+            echo -e "\e[31mERROR:\e[0m newrelic-ebpf-agent installation failed. Aborting installation."
+            echo ""
+            exit 1
+          }
 
           GREP_OUTPUT=$(systemctl status newrelic-ebpf-agent.service | grep "Active:" | grep inactive)
           if [[ $GREP_OUTPUT ]]; then
