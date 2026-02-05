@@ -194,6 +194,8 @@ install:
           APM_DATA_REPORTING="${APM_DATA_REPORTING:-true}"
           # -- Enable TCP statistics reporting. When enabled, the agent collects and reports low level tcp metrics and starts network monitoring
           NETWORK_METRICS_REPORTING="true"
+          # Enable JVM metrics reporting. When enabled, the agent collects and reports JVM metrics for Java applications
+          JVM_METRICS_REPORTING=true
 
           # -- All data drop filters configuration
           # Configure filters to drop all types of data (Network Metrics and APM data) based on config provided
@@ -247,6 +249,12 @@ install:
           PROTOCOLS_HTTP_SPANS_SAMPLING_LATENCY="p50"
           # PROTOCOLS_HTTP_SPANS_SAMPLING_ERROR_RATE represents the error rate threshold for an HTTP route where surpassing it would mean the corresponds spans of the route are exported. [Options: 1-100]
           PROTOCOLS_HTTP_SPANS_SAMPLING_ERROR_RATE=""
+
+          # -- To Enable/Disable the metrics, spans, sampling of latency and error rate of Thrift
+          PROTOCOLS_THRIFT_ENABLED="true"
+          PROTOCOLS_THRIFT_SPANS_ENABLED="true"
+          PROTOCOLS_THRIFT_SPANS_SAMPLING_LATENCY="p50"
+          PROTOCOLS_THRIFT_SPANS_SAMPLING_ERROR_RATE=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
@@ -509,6 +517,8 @@ install:
           APM_DATA_REPORTING="${APM_DATA_REPORTING:-true}"
           # -- Enable TCP statistics reporting. When enabled, the agent collects and reports low level tcp metrics and starts network monitoring
           NETWORK_METRICS_REPORTING="true"
+          # Enable JVM metrics reporting. When enabled, the agent collects and reports JVM metrics for Java applications
+          JVM_METRICS_REPORTING=true
 
           # -- All data drop filters configuration
           # Configure filters to drop all types of data (Network Metrics and APM data) based on config provided
@@ -561,6 +571,12 @@ install:
           PROTOCOLS_HTTP_SPANS_SAMPLING_LATENCY="p50"
           # PROTOCOLS_HTTP_SPANS_SAMPLING_ERROR_RATE represents the error rate threshold for an HTTP route where surpassing it would mean the corresponds spans of the route are exported. [Options: 1-100]
           PROTOCOLS_HTTP_SPANS_SAMPLING_ERROR_RATE=""
+
+          # -- To Enable/Disable the metrics, spans, sampling of latency and error rate of Thrift
+          PROTOCOLS_THRIFT_ENABLED="true"
+          PROTOCOLS_THRIFT_SPANS_ENABLED="true"
+          PROTOCOLS_THRIFT_SPANS_SAMPLING_LATENCY="p50"
+          PROTOCOLS_THRIFT_SPANS_SAMPLING_ERROR_RATE=""
 
           # -- To Enable/Disable the metrics, spans, sampling latency rate of MySQL DB
           PROTOCOLS_MYSQL_ENABLED="true"
