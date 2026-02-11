@@ -200,7 +200,7 @@ install:
           LOG_REPORTING=true
           # Enable log reporting for entity monitored by the eBPF Agent.
           APPLICATION_LOG_REPORTING_ENABLED=true
-          # Regex to match log file basename to include for entity log reporting.
+          # Regex to match log file path to include for entity log reporting
           APPLICATION_LOG_FILE_REGEX=".*\\.log$"
           # -- Maximum number of log samples to collect per minute from an entity.
           # The internal maxSamplesStored is calculated proportionally based on the harvest cycle (5 seconds):
@@ -543,7 +543,7 @@ install:
           LOG_REPORTING=true
           # Enable log reporting for entity monitored by the eBPF Agent.
           APPLICATION_LOG_REPORTING_ENABLED=true
-          # Regex to match log file basename to include for entity log reporting.
+          # Regex to match log file path to include for entity log reporting
           APPLICATION_LOG_FILE_REGEX=".*\\.log$"
           # -- Maximum number of log samples to collect per minute from an entity.
           # The internal maxSamplesStored is calculated proportionally based on the harvest cycle (5 seconds):
