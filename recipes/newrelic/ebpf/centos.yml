@@ -17,16 +17,6 @@ installTargets:
     platform: "centos"
     platformFamily: rhel
     platformVersion: "((9|10)\\.?.*)"
-  - type: host
-    os: linux
-    platform: amazon
-    platformFamily: rhel
-    platformVersion: "(2023\\.*)"
-  - type: host
-    os: linux
-    platform: amazon
-    platformFamily: rhel
-    platformVersion: "2"
   
   
     
@@ -38,8 +28,6 @@ keywords:
   - CentOS 9
   - RHEL 8
   - RHEL 9
-  - Amazon Linux 2023
-  - Amazon Linux 2
 
 processMatch: []
 
@@ -117,11 +105,11 @@ install:
           KERNEL_VERSION=$(uname -r | cut -d'-' -f1)
           KERNEL_MAJOR=$(echo $KERNEL_VERSION | cut -d'.' -f1)
           KERNEL_MINOR=$(echo $KERNEL_VERSION | cut -d'.' -f2)
-          
+
           # Convert to comparable format (e.g., 5.4 becomes 504, 4.19 becomes 419)
           KERNEL_NUM=$((KERNEL_MAJOR * 100 + KERNEL_MINOR))
           REQUIRED_KERNEL_NUM=504  # 5.4
-          
+
           if [ $KERNEL_NUM -lt $REQUIRED_KERNEL_NUM ]; then
             echo ""
             echo -e "\e[31mERROR:\e[0m eBPF agent requires Linux kernel version 5.4 or higher." >&2
@@ -157,7 +145,7 @@ install:
           }
 
           create_default_config_file(){
-          
+
               echo "Creating default configuration file at $CONFIG_FILE..."
               # Ensure the directory exists
               if [[ ! -d "/etc/newrelic-ebpf-agent/" ]]; then
@@ -171,7 +159,7 @@ install:
                 NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "US" ]]; then
                 NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:443"
-              fi       
+              fi
 
               # Create the default configuration file
               tee "$CONFIG_FILE" > /dev/null << EOS
@@ -187,11 +175,11 @@ install:
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
           # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
           TABLE_STORE_DATA_LIMIT_MB=250
-          # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use. 
-          # This is useful under restricted environments where agent is not able to download required linux headers. The required headers are identified by the agent based on the kernel version. 
+          # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use.
+          # This is useful under restricted environments where agent is not able to download required linux headers. The required headers are identified by the agent based on the kernel version.
           # ---- USE ONLY AFTER NEW RELIC SUPPORT RECOMMENDATION ----
           DOWNLOADED_PACKAGED_HEADERS_PATH=""
-          # Sets the absolute path of the complete directory where the linux headers are present for the eBPF agent to use. 
+          # Sets the absolute path of the complete directory where the linux headers are present for the eBPF agent to use.
           # This is useful where required linux headers could not be installed or path could not be determined.
           # ---- USE ONLY AFTER NEW RELIC SUPPORT RECOMMENDATION ----
           DISTRO_KERNEL_HEADERS_PATH=""
@@ -213,7 +201,7 @@ install:
           # -- Regular expression pattern to match entity names to always keep ALL data for. This bypasses all drop filters.
           # Example: "critical-service|important-app|\\bmust-monitor\\b"
           KEEP_ALL_DATA_FOR_ENTITY_NAME_REGEX=""
-          
+
           # -- Drop all data for applications/entities that have NewRelic/OpenTelemetry APM agents running
           DROP_ALL_DATA_FOR_APM_AGENT_ENABLED_ENTITY="false"
 
@@ -223,7 +211,7 @@ install:
           # Example: "kube-dns,otel-collector,service1"
           DROP_APM_DATA_FOR_ENTITY_NAME=""
 
-          # -- Comma-separated list of entity names to always keep eBPF APM data. default all entity is keepd/enabled 
+          # -- Comma-separated list of entity names to always keep eBPF APM data. default all entity is keepd/enabled
           # This bypasses DROP_APM_DATA_FOR_ENTITY_NAME filter.
           # Example: "critical-service,important-app,must-monitor"
           KEEP_APM_DATA_FOR_ENTITY_NAME=""
@@ -237,7 +225,7 @@ install:
           # Example: "kube-dns,otel-collector,service1"
           DROP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME=""
 
-          # -- Comma-separated list of entity names to always keep Network metrix data. default all entity is keepd/enabled 
+          # -- Comma-separated list of entity names to always keep Network metrix data. default all entity is keepd/enabled
           # This bypasses DROP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME filter.
           # Example: "critical-service,important-app,must-monitor"
           KEEP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME=""
@@ -246,7 +234,7 @@ install:
           # Each protocol has the flexibility to selectively enable the type of data to export.
           # Metrics are sent by default when a protocol is enabled and it supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
           # PROTOCOLS_<protocol-name>_SPANS_SAMPLING_LATENCY represents the sampling latency threshold for the spans to export. [Options: p1, p10, p50, p90, p99].
-          
+
           # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit
           PROTOCOLS_SPANS_UNLINKED_MAX="100"
           # -- To Enable/Disable the metrics, spans, sampling of latency and error rate of HTTP
@@ -374,7 +362,7 @@ install:
             echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
           fi
           echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
-    
+
     install_linux_headers:
       cmds:
         - |
@@ -401,7 +389,7 @@ install:
           fi
 
           create_default_config_file(){
-          
+
               echo "Creating default configuration file at $CONFIG_FILE..."
               # Ensure the directory exists
               if [[ ! -d "/etc/newrelic-ebpf-agent/" ]]; then
@@ -415,7 +403,7 @@ install:
                 NEW_RELIC_OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
               elif [[ "$NEW_RELIC_REGION" == "US" ]]; then
                 NEW_RELIC_OTLP_ENDPOINT="otlp.nr-data.net:443"
-              fi       
+              fi
 
               # Create the default configuration file
               tee "$CONFIG_FILE" > /dev/null << EOS
@@ -431,7 +419,7 @@ install:
           NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
           # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
           TABLE_STORE_DATA_LIMIT_MB=250
-          # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use. 
+          # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use.
           # This is useful under restricted environments where agent is not able to download required linux headers. The required headers are identified by the agent based on the kernel version.
           # ---- USE ONLY AFTER NEW RELIC SUPPORT RECOMMENDATION ----
           DOWNLOADED_PACKAGED_HEADERS_PATH=""
@@ -466,7 +454,7 @@ install:
           # Example: "kube-dns,otel-collector,service1"
           DROP_APM_DATA_FOR_ENTITY_NAME=""
 
-          # -- Comma-separated list of entity names to always keep eBPF APM data. default all entity is keepd/enabled 
+          # -- Comma-separated list of entity names to always keep eBPF APM data. default all entity is keepd/enabled
           # This bypasses DROP_APM_DATA_FOR_ENTITY_NAME filter.
           # Example: "critical-service,important-app,must-monitor"
           KEEP_APM_DATA_FOR_ENTITY_NAME=""
@@ -480,7 +468,7 @@ install:
           # Example: "kube-dns,otel-collector,service1"
           DROP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME=""
 
-          # -- Comma-separated list of entity names to always keep Network metrix data. default all entity is keepd/enabled 
+          # -- Comma-separated list of entity names to always keep Network metrix data. default all entity is keepd/enabled
           # This bypasses DROP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME filter.
           # Example: "critical-service,important-app,must-monitor"
           KEEP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME=""
@@ -580,7 +568,7 @@ install:
                   log_error_and_exit "Custom configuration file $FILE_PATH does not exist or is not a valid file. Aborting installation."
               fi
           }
-          
+
           curl -s $REPO_URL -o /etc/yum.repos.d/newrelic-infra.repo
           yum -y -q makecache --disablerepo='*' --enablerepo='newrelic-infra'
           yum -y -q install newrelic-ebpf-agent || {
@@ -626,7 +614,7 @@ install:
           sh: |
             rpm -E %{rhel}
       silent: true
-    
+
     # When the eBPF agent is installed alongside Agent Control, the default services are disabled
     # and the binary execution is orchestrated by Agent Control
     disable_service_for_agent_control:
