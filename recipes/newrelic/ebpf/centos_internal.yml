@@ -21,16 +21,6 @@ installTargets:
     platform: "centos"
     platformFamily: rhel
     platformVersion: "((9|10)\\.?.*)"
-  - type: host
-    os: linux
-    platform: amazon
-    platformFamily: rhel
-    platformVersion: "(2023\\.*)"
-  - type: host
-    os: linux
-    platform: amazon
-    platformFamily: rhel
-    platformVersion: "2"
   
   
     
@@ -42,8 +32,6 @@ keywords:
   - CentOS 9
   - RHEL 8
   - RHEL 9
-  - Amazon Linux 2023
-  - Amazon Linux 2
 
 processMatch: []
 
