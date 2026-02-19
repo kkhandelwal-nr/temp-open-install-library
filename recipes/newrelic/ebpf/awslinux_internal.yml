@@ -187,71 +187,17 @@ install:
           # -- To configure the log level in increasing order of verboseness. [OFF, FATAL, ERROR, WARNING, INFO, DEBUG]
           NEW_RELIC_LOG_LEVEL=INFO
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
-          logFilePath: "${LOG_FILE_PATH}"
-          # -- Sets the path of the directory where the required linux headers
-          # are downloaded and placed for the eBPF agent to use.
-          # -- This is useful under restricted environments where agent is not
-          # able to download required linux headers. The required headers are
-          # identified by the agent based on the kernel version.
-          downloadedPackagedHeadersPath: ""
-          # -- Sets the path of the installed distribution linux headers.
-          # This is useful when auto discovery of distribution linux headers
-          # path fails.
-          distroKernelHeadersPath: ""
-          # -- Enable APM data reporting. When enabled, the agent collects
-          # and reports application performance monitoring data.
-          # Controls APM data reporting. Accepted values: 'true' (always send),
-          # 'false' (never send), 'auto' (send only when neither APM nor
-          # OTel agent is attached)
-          reportApmData: "${REPORT_APM_DATA:-auto}"
-          # -- Enable network metrics reporting. When enabled, the agent
-          # collects and reports network metrics including TCP statistics.
-          # Controls network metrics reporting.
-          # Accepted values: 'true' (always send), 'false' (never send)
-          # and 'auto'
-          reportNetworkMetrics: "${REPORT_NETWORK_METRICS:-auto}"
-          # -- Enable log reporting. When enabled, the agent
-          # collects and reports logs. Controls log reporting.
-          # Accepted values: 'true' (always send), 'false' (never send)
-          # and 'auto' (send only when APM is not attached)
-          reportLogs: "${REPORT_LOGS:-false}"
-          # -- Enable agent/entity metadata reporting. When enabled (default), the agent
-          # exports agent and entity metadata to New Relic over HTTP. Set to false to
-          # disable the metadata reporting HTTP export path entirely.
-          agentMetadataReporting: ${AGENT_METADATA_REPORTING:-true}
-          ai_monitoring:
-            # -- Enable AI monitoring. When enabled, the agent collects and reports AI monitoring data.
-            # Accepted values: 'true' (always send), 'false' (never send) and
-            # 'auto' (send only when neither APM nor OTel agent is attached)
-            enabled: ${AI_MONITORING_ENABLED:-false}
-            # samplingLatency represents the sampling latency threshold for the spans to export.
-            # Options: any percentile from p0 to p99 (e.g., p0, p1, p5, p10, p50, p90, p99).
-            samplingLatency: "${AI_MONITORING_SAMPLING_LATENCY:-p50}"
-            # -- samplingErrorRate represents the error rate threshold
-            # for an HTTP route where surpassing it would mean the
-            # corresponding spans of the route are exported.
-            # Options: 1-100
-            samplingErrorRate: "${AI_MONITORING_SAMPLING_ERROR_RATE:-}"
-            # -- Enable GenAI capture message content. When enabled, the agent captures
-            # message content for GenAI interactions. Use with caution.
-            genAICaptureMessageContent: ${AI_MONITORING_GENAI_CAPTURE_MESSAGE_CONTENT:-false}
-
-          # -- HTTP path normalization patterns. Each pattern must contain at least one * wildcard.
-          # Use '!' prefix for exclusion patterns to preserve paths as-is (skip auto-clustering).
-          # Patterns are applied before auto-clustering and take precedence over it.
-          # Example:
-          # httpPathNormalizationPatterns:
-          #   - "/api/users/*"
-          #   - "/api/orders/*"
-          #   - "!/health/*"
-          httpPathNormalizationPatterns: []
-
-          # -- Maximum number of bytes captured from an HTTP request/response body.
-          # Default: 1048576 (1MB) when ai_monitoring.enabled is 'true' or 'auto', otherwise 1024 (1KB).
-          # Increase this value if AI monitoring payloads are being truncated.
-          # Example: 2097152 for 2MB
-          httpBodyLimitBytes: ""
-
+          NEW_RELIC_LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-}"
+          # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
+          TABLE_STORE_DATA_LIMIT_MB=250
+          # Sets the absolute path of the complete directory where the required linux headers are manually downloaded and placed for the eBPF agent to use.
+          # This is useful under restricted environments where agent is not able to download required linux headers. The required headers are identified by the agent based on the kernel version.
+          # ---- USE ONLY AFTER NEW RELIC SUPPORT RECOMMENDATION ----
+          DOWNLOADED_PACKAGED_HEADERS_PATH=""
+          # Sets the absolute path of the complete directory where the linux headers are present for the eBPF agent to use.
+          # This is useful where required linux headers could not be installed or path could not be determined.
+          # ---- USE ONLY AFTER NEW RELIC SUPPORT RECOMMENDATION ----
+          DISTRO_KERNEL_HEADERS_PATH=""
           # Capability to include/exclude port from entity name, default: true. ex: python:frosty_merkle:[80]
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           INCLUDE_PORT_IN_SERVER_ENTITY_IDENTIFICATION="true"
@@ -299,93 +245,10 @@ install:
           # Example: "critical-service,important-app,must-monitor"
           KEEP_NETWORK_METRICS_DATA_FOR_ENTITY_NAME=""
 
-          # The protocols to enable for tracing in the socket_tracer.
-          # There is an ability to configure span export if it is enabled.
-          # Each protocol has the flexibility to selectively enable the type
-          # of OTLP data to export.
-          # Metrics are sent by default when a protocol is enabled and it
-          # supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
-          # samplingLatency represents the sampling latency threshold for the spans to export.
-          # Options: p1, p10, p50, p90, p99.
-          protocols:
-            global:
-              # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit.
-              # Unlinked spans are spans that the eBPF agent captures but cannot associate with its parent.
-              max_unlinked_spans: 100
-              # Reserves a configurable percentage of the unlinked span quota for error spans,
-              # ensuring error visibility even when normal spans arrive first.
-              unlinked_spans_error_quota_percentage: 30
-            http:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-                # -- samplingErrorRate represents the error rate threshold
-                # for an HTTP route where surpassing it would mean the
-                # corresponding spans of the route are exported.
-                # Options: 1-100
-                samplingErrorRate: ""
-            thrift:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-                samplingErrorRate: ""
-            # -- Traces MySQL wire-protocol traffic, which also covers MariaDB and Aurora MySQL.
-            # Both speak the same wire protocol as MySQL, so there is no separate mariadb or
-            # aurora_mysql section to configure -- enabling/disabling protocols.mysql is enough.
-            # The specific flavor is auto-detected per-connection from the server handshake and
-            # reported per-record; it cannot be configured.
-            mysql:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            pgsql:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            cass:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            redis:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            mongodb:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            kafka:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            amqp:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            dns:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            dynamodb:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
-            mssql:
-              enabled: true
-              spans:
-                enabled: true
-                samplingLatency: "p50"
+          # To toggle the protocols to enable for tracing in the socket_tracer. There is an ability to configure span export if it is enabled.
+          # Each protocol has the flexibility to selectively enable the type of data to export.
+          # Metrics are sent by default when a protocol is enabled and it supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
+          # PROTOCOLS_<protocol-name>_SPANS_SAMPLING_LATENCY represents the sampling latency threshold for the spans to export. [Options: p1, p10, p50, p90, p99].
 
           # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit
           PROTOCOLS_SPANS_UNLINKED_MAX="100"
@@ -514,6 +377,33 @@ install:
             echo "Directory $NEW_RELIC_LOG_FILE_PATH created successfully."
           fi
           echo "eBPF logs directory: $NEW_RELIC_LOG_FILE_PATH"
+
+          if [[ -n "$LOCAL_PACKAGE_PATH" ]]; then
+              echo "Local package path provided: $LOCAL_PACKAGE_PATH"
+              if [[ -f "$LOCAL_PACKAGE_PATH" ]]; then
+
+                  KERNEL_VERSION=$(uname -r)
+                  echo "Installing kernel headers for kernel version: $KERNEL_VERSION"
+                  if ! yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
+                    echo ""
+                    echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
+                    echo ""
+                    # exit 20
+                  fi
+                  echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."ignore_error: true
+                  
+                  echo "Installing the provided RPM package..."
+                  yum install -y "$LOCAL_PACKAGE_PATH" || {
+                      echo "Resolving missing dependencies..."
+                      yum update -y || log_error_and_exit "Failed to perform yum upgrade."
+                      yum install -f -y || log_error_and_exit "Failed to resolve dependencies for the RPM package."
+                  }
+                  echo "RPM package and its dependencies installed successfully."
+                  exit 123
+              else
+                  log_error_and_exit "The provided path does not point to a valid file: $LOCAL_PACKAGE_PATH"
+              fi
+          fi  
 
     install_linux_headers:
       cmds:
