@@ -199,7 +199,7 @@ install:
           # Enable log reporting. When enabled, the agent collects and reports logs.
           LOG_REPORTING="${LOG_REPORTING:-false}"
           # Enable log reporting for entity monitored by the eBPF Agent.
-          APPLICATION_LOG_REPORTING_ENABLED="{APPLICATION_LOG_REPORTING_ENABLED:-false}"
+          APPLICATION_LOG_REPORTING_ENABLED="${APPLICATION_LOG_REPORTING_ENABLED:-false}"
           # Regex to match log file path to include for entity log reporting
           APPLICATION_LOG_FILE_REGEX=".*\\.log$"
           # -- Maximum number of log samples to collect per minute from an entity.
