@@ -330,13 +330,14 @@ install:
           distroKernelHeadersPath: ""
           # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
           tableStoreDataLimitMB: "250"
-          # -- Enable APM data reporting. When enabled, the agent collects and reports application performance monitoring data
-          apmDataReporting: ${APM_DATA_REPORTING:-true}
-          # -- Enable network metrics reporting. When enabled, the agent collects and reports network metrics including TCP statistics
-          # RENAMED from 'tcpStatsReporting' for clarity. The old name is deprecated but still supported for backward compatibility.
-          networkMetricsReporting: true
+          # -- Enable APM data reporting. When enabled, the agent collects and reports application performance monitoring data. Controls APM data reporting. Accepted values: 'true' (always send), 'false' (never send), 'auto' (send only when neither APM nor OTel agent is attached)
+          reportApmData: "${REPORT_APM_DATA:-auto}"
+          # -- Enable network metrics reporting. When enabled, the agent collects and reports network metrics including TCP statistics. Controls network metrics reporting. Accepted values: 'true' (always send), 'false' (never send) and 'auto'
+          reportNetworkMetrics: "auto"
           # -- Enable log reporting. When enabled, the agent collects and reports logs from entities.
           logReporting: ${LOG_REPORTING:-false}
+          # -- Enable AI monitoring. When enabled, the agent collects and reports AI monitoring data.
+          aiMonitoring: false
           # Capability to include/exclude port from entity name, default: true. ex: python:frosty_merkle:[80]
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           includePortInServerEntityIdentification: true
@@ -357,8 +358,6 @@ install:
           # -- APM data filters configuration
           # Configure filters to drop ebpf APM data based on config provided
           apmDataFilters:
-            # -- Drop eBPF APM data for applications/entities that have NewRelic APM/OTel agents running
-            dropEapmForApmEnabledEntity: true
             # -- List of entity names to drop ebpf APM data for
             dropEntityName: []
             # -- List of entity names to always keep APM data. By default all entities are kept/enabled
