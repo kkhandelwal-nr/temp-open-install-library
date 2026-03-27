@@ -337,7 +337,7 @@ install:
           # -- Enable log reporting. When enabled, the agent collects and reports logs from entities.
           logReporting: ${LOG_REPORTING:-false}
           # -- Enable AI monitoring. When enabled, the agent collects and reports AI monitoring data.
-          aiMonitoring: false
+          reportAiMetrics: "auto"
           # Capability to include/exclude port from entity name, default: true. ex: python:frosty_merkle:[80]
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           includePortInServerEntityIdentification: true
