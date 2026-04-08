@@ -327,8 +327,8 @@ install:
           reportApmData: "${REPORT_APM_DATA:-auto}"
           # -- Enable network metrics reporting. When enabled, the agent collects and reports network metrics including TCP statistics. Controls network metrics reporting. Accepted values: 'true' (always send), 'false' (never send) and 'auto'
           reportNetworkMetrics: "auto"
-          # -- Enable log reporting. When enabled, the agent collects and reports logs from entities.
-          logReporting: ${LOG_REPORTING:-false}
+          # -- Enable log reporting. When enabled, the agent collects and reports logs from entities. Controls log reporting. Accepted values: 'true' (always send), 'false' (never send) and 'auto' (send only when APM is not attached)
+          reportLogs: "${REPORT_LOGS:-false}"
           # -- Enable AI monitoring. When enabled, the agent collects and reports AI monitoring data.
           reportAiMetrics: "auto"
           # Capability to include/exclude port from entity name, default: true. ex: python:frosty_merkle:[80]
@@ -382,9 +382,11 @@ install:
             # -- Application/entity log reporting filters
             applicationLogReporting:
               # -- Enable log collection from entities matching the filters below
-              enabled: ${APPLICATION_LOG_REPORTING_ENABLED:-false}
+              enabled: "${APPLICATION_LOG_REPORTING_ENABLED:-true}"
               # -- Regex to match log file names to include
               fileRegex: ".*.log$"
+              # -- Minimum log level to report (e.g., TRACE, DEBUG, INFO, WARN, ERROR). Default: INFO
+              logLevelThreshold: "${APPLICATION_LOG_LEVEL_THRESHOLD:-INFO}"
               # -- Maximum number of log samples to collect per minute from an entity.
               # The internal maxSamplesStored is calculated proportionally based on the harvest cycle (5 seconds):
               # maxSamplesStored = maxSamplesPerMinute / (60 / 5) = maxSamplesPerMinute / 12
