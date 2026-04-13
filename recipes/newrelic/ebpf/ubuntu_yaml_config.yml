@@ -288,8 +288,10 @@ install:
           # Ensure the directory exists
           mkdir -p "$CONFIG_DIR" || log_error_and_exit "Failed to create directory $CONFIG_DIR."
 
-          # Determine OTLP endpoint based on region
-          if [[ "${NEW_RELIC_REGION:-}" == "staging" ]]; then
+          # Determine OTLP endpoint based on custom endpoint or region
+          if [[ -n "${CUSTOM_OTLP_ENDPOINT:-}" ]]; then
+            OTLP_ENDPOINT="${CUSTOM_OTLP_ENDPOINT}"
+          elif [[ "${NEW_RELIC_REGION:-}" == "staging" ]]; then
             OTLP_ENDPOINT="staging-otlp.nr-data.net:443"
           elif [[ "${NEW_RELIC_REGION:-}" == "EU" ]]; then
             OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
@@ -311,6 +313,13 @@ install:
           deploymentName: "${DEPLOYMENT_NAME:-}"
           # -- Endpoint to export data to Newrelic
           otlpEndpoint: "${OTLP_ENDPOINT}"
+          # -- Custom OTLP endpoint URL. When set, this takes precedence over the region-based static endpoints.
+          customOtlpEndpoint: "${CUSTOM_OTLP_ENDPOINT:-}"
+          # -- Whether TLS is enabled on the custom OTLP endpoint. Defaults to true.
+          # Only overridden when both customOtlpEndpoint and this field are explicitly set.
+          customOtlpEndpointTlsEnabled: "${CUSTOM_OTLP_ENDPOINT_TLS_ENABLED:-}"
+          # -- Path to the CA certificate file for the custom OTLP endpoint.
+          customOtlpEndpointTlsCertPath: "${CUSTOM_OTLP_ENDPOINT_TLS_CERT_PATH:-}"
           # -- To configure the log level in increasing order of verboseness.
           # -- OFF, FATAL, ERROR, WARNING, INFO, DEBUG
           logLevel: "INFO"
