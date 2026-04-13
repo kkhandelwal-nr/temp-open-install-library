@@ -295,17 +295,6 @@ install:
           # Ensure the directory exists
           mkdir -p "$CONFIG_DIR" || log_error_and_exit "Failed to create directory $CONFIG_DIR."
 
-          # Determine OTLP endpoint based on custom endpoint or region
-          if [[ -n "${CUSTOM_OTLP_ENDPOINT:-}" ]]; then
-            OTLP_ENDPOINT="${CUSTOM_OTLP_ENDPOINT}"
-          elif [[ "${NEW_RELIC_REGION:-}" == "staging" ]]; then
-            OTLP_ENDPOINT="staging-otlp.nr-data.net:443"
-          elif [[ "${NEW_RELIC_REGION:-}" == "EU" ]]; then
-            OTLP_ENDPOINT="otlp.eu01.nr-data.net:443"
-          else
-            OTLP_ENDPOINT="otlp.nr-data.net:443"
-          fi
-
           # Set default log file path
           LOG_FILE_PATH="${NEW_RELIC_LOG_FILE_PATH:-/var/log/newrelic-ebpf-agent}"
 
@@ -318,38 +307,57 @@ install:
           licenseKey: "${NEW_RELIC_LICENSE_KEY}"
           # -- Unique name for the deployment to identify data posting via eBPF Agent
           deploymentName: "${DEPLOYMENT_NAME:-}"
-          # -- Endpoint to export data to Newrelic
-          otlpEndpoint: "${OTLP_ENDPOINT}"
+          # -- If using a customSecretLicenseKey, you must supply your
+          # region "US"/"EU". Otherwise, leave this value as an empty string.
+          region: "${NEW_RELIC_REGION}"
           # -- Custom OTLP endpoint URL. When set, this takes precedence over the region-based static endpoints.
-          customOtlpEndpoint: "${CUSTOM_OTLP_ENDPOINT:-}"
-          # -- Whether TLS is enabled on the custom OTLP endpoint. Defaults to true.
+          customOtlpEndpoint: ""
           # Only overridden when both customOtlpEndpoint and this field are explicitly set.
-          customOtlpEndpointTlsEnabled: "${CUSTOM_OTLP_ENDPOINT_TLS_ENABLED:-}"
-          # -- Path to the CA certificate file for the custom OTLP endpoint.
-          customOtlpEndpointTlsCertPath: "${CUSTOM_OTLP_ENDPOINT_TLS_CERT_PATH:-}"
+          customOtlpEndpointTlsEnabled: ""
+          # -- Path to custom certificates for OTLP endpoint TLS.
+          customOtlpEndpointTlsCertPath: ""
           # -- To configure the log level in increasing order of verboseness.
           # -- OFF, FATAL, ERROR, WARNING, INFO, DEBUG
           logLevel: "INFO"
           # -- To configure log file path of eBPF Agent. If logging to this path fails, logs will be directed to stdout.
           logFilePath: "${LOG_FILE_PATH}"
-          # -- Sets the path of the directory where the required linux headers are downloaded and placed for the eBPF agent to use.
-          # -- This is useful under restricted environments where agent is not able to download required linux headers. The required headers are identified by the agent based on the kernel version.
+          # -- Sets the path of the directory where the required linux headers
+          # are downloaded and placed for the eBPF agent to use.
+          # -- This is useful under restricted environments where agent is not
+          # able to download required linux headers. The required headers are
+          # identified by the agent based on the kernel version.
           downloadedPackagedHeadersPath: ""
-          # -- Sets the path of the installed distribution linux headers. This is useful when auto discovery of distribution linux headers path fails.
+          # -- Sets the path of the installed distribution linux headers.
+          # This is useful when auto discovery of distribution linux headers
+          # path fails.
           distroKernelHeadersPath: ""
-          # -- The primary lever to control RAM use of the eBPF agent. Specified in MiB.
-          tableStoreDataLimitMB: "250"
-          # -- Enable APM data reporting. When enabled, the agent collects and reports application performance monitoring data. Controls APM data reporting. Accepted values: 'true' (always send), 'false' (never send), 'auto' (send only when neither APM nor OTel agent is attached)
+          # -- Enable APM data reporting. When enabled, the agent collects
+          # and reports application performance monitoring data.
+          # Controls APM data reporting. Accepted values: 'true' (always send),
+          # 'false' (never send), 'auto' (send only when neither APM nor
+          # OTel agent is attached)
           reportApmData: "${REPORT_APM_DATA:-auto}"
-          # -- Enable network metrics reporting. When enabled, the agent collects and reports network metrics including TCP statistics. Controls network metrics reporting. Accepted values: 'true' (always send), 'false' (never send) and 'auto'
+          # -- Enable network metrics reporting. When enabled, the agent
+          # collects and reports network metrics including TCP statistics.
+          # Controls network metrics reporting.
+          # Accepted values: 'true' (always send), 'false' (never send)
+          # and 'auto'
           reportNetworkMetrics: "auto"
-          # -- Enable log reporting. When enabled, the agent collects and reports logs from entities. Controls log reporting. Accepted values: 'true' (always send), 'false' (never send) and 'auto' (send only when APM is not attached)
+          # -- Enable log reporting. When enabled, the agent
+          # collects and reports logs. Controls log reporting.
+          # Accepted values: 'true' (always send), 'false' (never send)
+          # and 'auto' (send only when APM is not attached)
           reportLogs: "${REPORT_LOGS:-false}"
           # -- Enable AI monitoring. When enabled, the agent collects and reports AI monitoring data.
-          reportAiMetrics: "auto"
+          # Accepted values: 'true' (always send), 'false' (never send) and 'auto'
+          reportAiMetrics: "false"
+          # -- Enable GenAI capture message content. When enabled, the agent captures
+          # message content for GenAI interactions. Use with caution.
+          genAICaptureMessageContent: false
           # Capability to include/exclude port from entity name, default: true. ex: python:frosty_merkle:[80]
           # Set it to false, to exclude ports from entity name, ex: python:frosty_merkle
           includePortInServerEntityIdentification: true
+
           # -- Custom labels to be added to all entities reported by the eBPF agent.
           # These labels are sent as the NEW_RELIC_LABELS environment variable in the format "key1:value1;key2:value2".
           # Example:
@@ -363,11 +371,13 @@ install:
           # Configure filters to drop all types of data (Network Metrics and APM data) based on config provided
           allDataFilters:
             # -- Define a regex to match k8s service names to drop. Example "kube-dns|otel-collector|\\bblah\\b"
-            # RENAMED from 'dropServiceNameRegex' for clarity. The old name is deprecated but still supported for backward compatibility.
+            # RENAMED from 'dropServiceNameRegex' for clarity. The old name
+            # is deprecated but still supported for backward compatibility.
             dropServiceNameRegex: ""
             # -- This config acts as a bypass for the dropServiceNameRegex config.
             # Service names that match this regex will not have their data dropped by the dropServiceNameRegex.
-            # RENAMED from 'allowServiceNameRegex' for clarity. The old name is deprecated but still supported for backward compatibility.
+            # RENAMED from 'allowServiceNameRegex' for clarity. The old name
+            # is deprecated but still supported for backward compatibility.
             keepServiceNameRegex: ""
             # -- Drop all data for applications/entities that have NewRelic/OTEL APM agents running
             dropApmAgentEnabledEntity: false
@@ -375,6 +385,8 @@ install:
           # -- APM data filters configuration
           # Configure filters to drop ebpf APM data based on config provided
           apmDataFilters:
+            # -- Drop eBPF APM data for applications/entities that have NewRelic APM/OTel agents running
+            dropEapmForApmEnabledEntity: true
             # -- List of entity names to drop ebpf APM data for
             dropEntityName: []
             # -- List of entity names to always keep APM data. By default all entities are kept/enabled
@@ -419,21 +431,29 @@ install:
           # while tcp_stats tracks TCP metrics.
           # stirlingSources: "socket_tracer,tcp_stats"
 
-          # The protocols to enable for tracing in the socket_tracer. There is an ability to configure span export if it is enabled.
-          # Each protocol has the flexibility to selectively enable the type of OTLP data to export.
-          # Metrics are sent by default when a protocol is enabled and it supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
+          # The protocols to enable for tracing in the socket_tracer.
+          # There is an ability to configure span export if it is enabled.
+          # Each protocol has the flexibility to selectively enable the type
+          # of OTLP data to export.
+          # Metrics are sent by default when a protocol is enabled and it
+          # supports metrics. Note: AMQP, Kafka, DNS do not report metrics.
           # samplingLatency represents the sampling latency threshold for the spans to export.
           # Options: p1, p10, p50, p90, p99.
           protocols:
             global:
               # Controls maximum unlinked spans reported per protocol. Set to 0 to disable limit
               max_unlinked_spans: 100
+              # Reserves a configurable percentage of the unlinked span quota for error spans,
+              # ensuring error visibility even when normal spans arrive first.
+              unlinked_spans_error_quota_percentage: 30
             http:
               enabled: true
               spans:
                 enabled: true
                 samplingLatency: "p50"
-                # -- samplingErrorRate represents the error rate threshold for an HTTP route where surpassing it would mean the corresponds spans of the route are exported.
+                # -- samplingErrorRate represents the error rate threshold
+                # for an HTTP route where surpassing it would mean the
+                # corresponding spans of the route are exported.
                 # Options: 1-100
                 samplingErrorRate: ""
             thrift:
@@ -492,7 +512,6 @@ install:
               spans:
                 enabled: true
                 samplingLatency: "p50"
-
 
           EOS
 
