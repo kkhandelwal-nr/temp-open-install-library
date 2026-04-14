@@ -235,7 +235,7 @@ install:
     create_config:
       cmds:
         - |
-          CONFIG_FILE="/etc/newrelic-ebpf-agent/values.yaml"
+          CONFIG_FILE="/etc/newrelic-ebpf-agent/newrelic-ebpf-agent.yaml"
           CONFIG_DIR="/etc/newrelic-ebpf-agent"
 
           # Function to log errors and exit
@@ -583,5 +583,5 @@ install:
 
 postInstall:
   info: |2
-      ⚙️  The eBPF Agent configuration file can be found in /etc/newrelic-ebpf-agent/values.yaml
+      ⚙️  The eBPF Agent configuration file can be found in /etc/newrelic-ebpf-agent/newrelic-ebpf-agent.yaml
       Edit this file to make changes or configure advanced features for the agent.
