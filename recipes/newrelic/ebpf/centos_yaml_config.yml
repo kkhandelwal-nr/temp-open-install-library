@@ -306,7 +306,7 @@ install:
           # -- Custom OTLP endpoint URL. When set, this takes precedence over the region-based static endpoints.
           customOtlpEndpoint: ""
           # Only overridden when both customOtlpEndpoint and this field are explicitly set.
-          customOtlpEndpointTlsEnabled: ""
+          customOtlpEndpointTlsEnabled: true
           # -- Path to custom certificates for OTLP endpoint TLS.
           customOtlpEndpointTlsCertPath: ""
           # -- To configure the log level in increasing order of verboseness.
@@ -335,7 +335,7 @@ install:
           # Controls network metrics reporting.
           # Accepted values: 'true' (always send), 'false' (never send)
           # and 'auto'
-          reportNetworkMetrics: "auto"
+          reportNetworkMetrics: "${REPORT_NETWORK_METRICS:-auto}"
           # -- Enable log reporting. When enabled, the agent
           # collects and reports logs. Controls log reporting.
           # Accepted values: 'true' (always send), 'false' (never send)
