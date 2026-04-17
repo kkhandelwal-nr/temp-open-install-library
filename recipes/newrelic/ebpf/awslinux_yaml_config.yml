@@ -408,7 +408,7 @@ install:
             # -- Application/entity log reporting filters
             applicationLogReporting:
               # -- Enable log collection from entities matching the filters below
-              enabled: "${APPLICATION_LOG_REPORTING_ENABLED:-true}"
+              enabled: ${APPLICATION_LOG_REPORTING_ENABLED:-true}
               # -- Regex to match log file names to include
               fileRegex: ".*.log$"
               # -- Minimum log level to report (e.g., TRACE, DEBUG, INFO, WARN, ERROR). Default: INFO
