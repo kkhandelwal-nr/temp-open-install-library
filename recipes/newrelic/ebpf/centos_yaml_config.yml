@@ -29,7 +29,6 @@ installTargets:
   - type: host
     os: linux
     platform: "oracle"
-    platformFamily: rhel
     platformVersion: "(8|9|10)\\.*"
 
 
