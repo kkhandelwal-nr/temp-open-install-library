@@ -26,8 +26,13 @@ installTargets:
     platform: "almalinux"
     platformFamily: rhel
     platformVersion: "((7|8|9|10)\\.?.*)"
-  
-    
+  - type: host
+    os: linux
+    platform: "oracle"
+    platformFamily: rhel
+    platformVersion: "(8|9|10)\\.*"
+
+
 keywords:
   - eBPF
   - Agent
