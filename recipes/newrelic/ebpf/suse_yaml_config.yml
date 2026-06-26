@@ -233,8 +233,15 @@ install:
                     # Detect kernel flavor from uname (e.g., default, azure, rt)
                     KERNEL_FLAVOR=$(echo "$KERNEL_VERSION" | grep -oP '[^-]+$')
                     # Get exact package version from the RPM that owns the running kernel
-                    KERNEL_PKG_VERSION=$(rpm -qf "/boot/vmlinuz-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+                    # Try vmlinuz (x86_64) first, then Image (aarch64)
+                    KERNEL_PKG_VERSION=""
+                    if [[ -f "/boot/vmlinuz-${KERNEL_VERSION}" ]]; then
+                      KERNEL_PKG_VERSION=$(rpm -qf "/boot/vmlinuz-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+                    elif [[ -f "/boot/Image-${KERNEL_VERSION}" ]]; then
+                      KERNEL_PKG_VERSION=$(rpm -qf "/boot/Image-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+                    fi
                     if [[ -n "$KERNEL_PKG_VERSION" ]]; then
+                      echo "Found matching kernel package version: $KERNEL_PKG_VERSION"
                       if zypper --non-interactive install "kernel-${KERNEL_FLAVOR}-devel=${KERNEL_PKG_VERSION}"; then
                         echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
                       else
@@ -244,6 +251,7 @@ install:
                         # exit 20
                       fi
                     else
+                      echo "Could not determine exact kernel package version, installing latest kernel-${KERNEL_FLAVOR}-devel"
                       if zypper --non-interactive install "kernel-${KERNEL_FLAVOR}-devel"; then
                         echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
                       else
@@ -569,8 +577,15 @@ install:
           # Detect kernel flavor from uname (e.g., default, azure, rt)
           KERNEL_FLAVOR=$(echo "$KERNEL_VERSION" | grep -oP '[^-]+$')
           # Get exact package version from the RPM that owns the running kernel
-          KERNEL_PKG_VERSION=$(rpm -qf "/boot/vmlinuz-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+          # Try vmlinuz (x86_64) first, then Image (aarch64)
+          KERNEL_PKG_VERSION=""
+          if [[ -f "/boot/vmlinuz-${KERNEL_VERSION}" ]]; then
+            KERNEL_PKG_VERSION=$(rpm -qf "/boot/vmlinuz-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+          elif [[ -f "/boot/Image-${KERNEL_VERSION}" ]]; then
+            KERNEL_PKG_VERSION=$(rpm -qf "/boot/Image-${KERNEL_VERSION}" --queryformat '%{VERSION}-%{RELEASE}\n' 2>/dev/null | head -1)
+          fi
           if [[ -n "$KERNEL_PKG_VERSION" ]]; then
+            echo "Found matching kernel package version: $KERNEL_PKG_VERSION"
             if zypper --non-interactive install "kernel-${KERNEL_FLAVOR}-devel=${KERNEL_PKG_VERSION}"; then
               echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
             else
@@ -579,6 +594,7 @@ install:
               echo ""
             fi
           else
+            echo "Could not determine exact kernel package version, installing latest kernel-${KERNEL_FLAVOR}-devel"
             if zypper --non-interactive install "kernel-${KERNEL_FLAVOR}-devel"; then
               echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
             else
