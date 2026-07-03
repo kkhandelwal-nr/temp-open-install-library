@@ -628,28 +628,21 @@ install:
 
           # Install the eBPF agent package
           apt-get $OPTIONS install -yq --no-install-recommends newrelic-ebpf-agent || {
-            echo "Error: newrelic-ebpf-agent installation failed"
-            echo "Attempting to configure the packages again"
-            dpkg --configure -a
-            # Check if there was an error
-            if [ $? -ne 0 ]; then
-              echo "Error found while reconfiguring dpkg database"
-              # Force-Install the Software
-              echo "Attempting to install any missing dependencies or fixes broken packages."
-              apt-get $OPTIONS install -f
-              if [ $? -ne 0 ]; then
+            # apt returned non-zero - check if eBPF agent was actually installed despite the error.
+            # dpkg exits non-zero when any package fails to configure, even ones unrelated to the
+            # eBPF agent (e.g. a broken nginx whose post-install script fails to bind its port).
+            if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
+              echo "Attempting to configure the packages again"
+              dpkg --configure -a 2>/dev/null || true
+              apt-get $OPTIONS install -f -yq 2>/dev/null || true
+              if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
+                echo ""
+                echo -e "\e[31mERROR:\e[0m newrelic-ebpf-agent installation failed. Aborting installation."
+                echo ""
                 exit 1
               fi
             fi
           }
-
-          # Verify package was actually installed
-          if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m newrelic-ebpf-agent installation failed. Aborting installation."
-            echo ""
-            exit 1
-          fi
 
           echo "eBPF agent package installed successfully."
 
