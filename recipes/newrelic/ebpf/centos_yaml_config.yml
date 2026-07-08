@@ -203,13 +203,13 @@ install:
           echo "License key validated."
 
           # Validate DEPLOYMENT_NAME (required unless Agent Control mode)
-          if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
-            echo ""
-            exit 1
-          fi
-          echo "Deployment name validated."
+          # if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
+          #   echo ""
+          #   echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
+          #   echo ""
+          #   exit 1
+          # fi
+          # echo "Deployment name validated."
 
           # Set default log file path if not provided
           if [[ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]]; then
