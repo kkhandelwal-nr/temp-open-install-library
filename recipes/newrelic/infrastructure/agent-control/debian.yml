@@ -14,7 +14,7 @@ installTargets:
   - type: host
     os: linux
     platform: ubuntu
-    platformVersion: "(16|18|20|22|24)\\.04"
+    platformVersion: "(16|18|20|22|24|26)\\.04"
 
 keywords:
   - AgentControl
@@ -34,26 +34,9 @@ keywords:
 processMatch: []
 
 preInstall:
+  # Autodiscovery checks disabled to improve installation performance
+  # Docker/WSL validations removed to avoid slow discovery of unrelated recipes
   requireAtDiscovery: |
-    IS_DOCKER_CONTAINER_CGROUP=$(grep 'docker\|lxc' /proc/1/cgroup | wc -l)
-    if [ $IS_DOCKER_CONTAINER_CGROUP -gt 0 ] ; then
-      echo "docker detected with cgroup, unsupported" >&2
-      exit 131
-    fi
-    IS_DOCKER_CONTAINER_ENVIRON=$(grep container=lxc /proc/1/environ | wc -l)
-    if [ $IS_DOCKER_CONTAINER_ENVIRON -gt 0 ] ; then
-      echo "docker detected with environ, unsupported" >&2
-      exit 131
-    fi
-    if [ -f /.dockerenv ] ; then
-      echo "docker detected with .dockerenv, unsupported" >&2
-      exit 131
-    fi
-    IS_WSL_CONTAINER=$(grep -i 'Microsoft' /proc/version | wc -l)
-    if [ $IS_WSL_CONTAINER -gt 0 ] ; then
-      echo "microsoft Windows Subsystem for Linux for infra detected, unsupported" >&2
-      exit 131
-    fi
     exit 0
 
   discoveryMode:
@@ -66,18 +49,6 @@ install:
       sh: command -v systemctl | wc -l
     IS_INITCTL:
       sh: command -v initctl | wc -l
-    # By default, we'll install the Infra Agent as the Host instrumentation solution
-    # We use env vars per host instrumentation to avoid checking constants and related issues in the recipe
-    HOST_INFRA_AGENT:
-      sh: |
-        if [[ "${NEW_RELIC_AGENT_CONTROL_HOST_MONITORING_SOURCE}" == "" || "${NEW_RELIC_AGENT_CONTROL_HOST_MONITORING_SOURCE}" == "infra-agent" ]]; then
-          echo "true"
-        fi
-    HOST_OTEL:
-      sh: |
-        if [ "${NEW_RELIC_AGENT_CONTROL_HOST_MONITORING_SOURCE}" == "otel" ]; then
-          echo "true"
-        fi
 
   tasks:
     default:
@@ -85,7 +56,6 @@ install:
         - task: write_recipe_metadata
         - task: detect_previous_install
         - task: assert_pre_req
-        - task: cleanup
         - task: log_ssl_ciphers
         - task: update_apt
         - task: install_gnupg
@@ -94,7 +64,6 @@ install:
         - task: update_apt_nr_source
         - task: install_agent_control
         - task: config_agent_control
-        - task: host_monitoring_config
         - task: restart_agent_control
         - task: assert_agent_control_status_ok
         - task: signal_recipe_applied
@@ -189,32 +158,12 @@ install:
               exit 131
             fi
           else
-            if [ -n "{{.DEBIAN_VERSION_CODENAME}}" ]; then
-              IS_INFRA_AVAILABLE=$(curl -Is {{.NEW_RELIC_DOWNLOAD_URL}}preview/linux/apt/dists/{{.DEBIAN_VERSION_CODENAME}}/InRelease | grep " 2[0-9][0-9] " | wc -l)
-              if [ $IS_INFRA_AVAILABLE -eq 0 ] ; then
-                echo "there is no New Relic Agent Control available for the distribution with version codename '{{.DEBIAN_VERSION_CODENAME}}'." >&2
-                exit 131
-              fi
-            else
-              echo "there is no New Relic Agent Control available for the distribution, no version codename was found." >&2
-              exit 131
-            fi
+            echo "Unable to determine distribution codename from /etc/os-release" >&2
+            exit 131
           fi
       vars:
         DEBIAN_CODENAME:
           sh: awk -F= '/VERSION_CODENAME/ {print $2}' /etc/os-release
-        DEBIAN_VERSION_CODENAME:
-          sh: cat /etc/os-release | grep "VERSION=\"[0-9] " | awk -F " " '{print $2}' | sed 's/[()"]//g'
-
-    cleanup:
-      # skipping this task if .nr-cli exists
-      status:
-        - test -f /etc/newrelic-agent-control/.nr-cli
-      cmds:
-        - |
-          if [ "{{.HOST_INFRA_AGENT}}" == "true" ] ; then
-            rm -rf /var/db/newrelic-infra/data 2>/dev/null
-          fi
 
     log_ssl_ciphers:
       cmds:
@@ -257,7 +206,8 @@ install:
     add_gpg_key:
       cmds:
         - |
-          curl -s {{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/keys/newrelic_apt_key_current.gpg | gpg --dearmor --batch --yes -o /etc/apt/trusted.gpg.d/newrelic-infra.gpg
+          mkdir -p /etc/apt/keyrings
+          curl -s {{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/keys/newrelic_apt_key_current.gpg | gpg --dearmor --batch --yes -o /etc/apt/keyrings/newrelic-infra.gpg
       silent: true
 
     add_nr_source:
@@ -270,17 +220,15 @@ install:
           fi
 
           if [ -n "{{.DEBIAN_CODENAME}}" ]; then
-            printf "deb [arch="$ARCH"] {{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/linux/apt {{.DEBIAN_CODENAME}} main" | tee /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
-            printf "\ndeb [arch="$ARCH"] {{.NEW_RELIC_DOWNLOAD_URL}}preview/linux/apt {{.DEBIAN_CODENAME}} main" | tee -a /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
+            printf "deb [arch="$ARCH" signed-by=/etc/apt/keyrings/newrelic-infra.gpg] {{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/linux/apt {{.DEBIAN_CODENAME}} main" | tee /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
+            printf "\ndeb [arch="$ARCH" signed-by=/etc/apt/keyrings/newrelic-infra.gpg] {{.NEW_RELIC_DOWNLOAD_URL}}preview/linux/apt {{.DEBIAN_CODENAME}} main" | tee -a /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
           else
-            printf "deb [arch="$ARCH"] {{.NEW_RELIC_DOWNLOAD_URL}}infrastructure_agent/linux/apt {{.DEBIAN_VERSION_CODENAME}} main" | tee /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
-            printf "\ndeb [arch="$ARCH"] {{.NEW_RELIC_DOWNLOAD_URL}}preview/linux/apt {{.DEBIAN_VERSION_CODENAME}} main" | tee -a /etc/apt/sources.list.d/newrelic-infra.list > /dev/null
+            echo "Unable to determine distribution codename from /etc/os-release" >&2
+            exit 131
           fi
       vars:
         DEBIAN_CODENAME:
           sh: awk -F= '/VERSION_CODENAME/ {print $2}' /etc/os-release
-        DEBIAN_VERSION_CODENAME:
-          sh: cat /etc/os-release | grep "VERSION=\"[0-9] " | awk -F " " '{print $2}' | sed 's/[()"]//g'
       silent: true
 
     update_apt_nr_source:
@@ -322,7 +270,7 @@ install:
           fi
       vars:
         # Allows to set a specific version from the cli
-        NEW_RELIC_AGENT_VERSION: '{{ .NEW_RELIC_AGENT_VERSION | default "1.8.1" }}'
+        NEW_RELIC_AGENT_VERSION: '{{ .NEW_RELIC_AGENT_VERSION | default "1.18.0" }}'
       silent: true
 
     config_agent_control:
@@ -330,12 +278,6 @@ install:
         - test -f /etc/newrelic-agent-control/.nr-cli
       cmds:
         - |
-          # Local config for Agent Control (agents)
-          if [ "{{.HOST_OTEL}}" == "true" ] ; then
-            AGENT_SET="otel"
-          else
-            AGENT_SET="infra-agent"
-          fi
           # Proxy configuration
           # Empty values are ignored by the cli (--proxy-url="" is the same as not setting --proxy-url)
           AC_PROXY_ARGS="--proxy-url={{.NEW_RELIC_AGENT_CONTROL_PROXY_URL}} --proxy-ca-bundle-file={{.NEW_RELIC_AGENT_CONTROL_PROXY_CA_BUNDLE_FILE}} --proxy-ca-bundle-dir={{.NEW_RELIC_AGENT_CONTROL_PROXY_CA_BUNDLE_DIR}} --ignore-system-proxy={{.NEW_RELIC_AGENT_CONTROL_PROXY_IGNORE_SYSTEM}}"
@@ -346,8 +288,7 @@ install:
               --output-path /etc/newrelic-agent-control/local-data/agent-control/local_config.yaml \
               --region {{.NEW_RELIC_REGION}} \
               --newrelic-license-key {{.NEW_RELIC_LICENSE_KEY}} \
-              --env-vars-file-path /etc/newrelic-agent-control/environment_variables.yaml \
-              --agent-set $AGENT_SET $AC_PROXY_ARGS
+              --env-vars-file-path /etc/newrelic-agent-control/environment_variables.yaml $AC_PROXY_ARGS
           else
             if [ -z "{{ .NEW_RELIC_AUTH_PRIVATE_KEY_PATH }}" ]; then
               mkdir -p /etc/newrelic-agent-control/keys
@@ -360,7 +301,6 @@ install:
               --region {{.NEW_RELIC_REGION}} \
               --newrelic-license-key {{.NEW_RELIC_LICENSE_KEY}} \
               --env-vars-file-path /etc/newrelic-agent-control/environment_variables.yaml \
-              --agent-set $AGENT_SET \
               --fleet-id {{.NR_CLI_FLEET_ID}} \
               --organization-id "{{.NEW_RELIC_ORGANIZATION}}" \
               --auth-client-id "{{.NEW_RELIC_AUTH_PROVISIONED_CLIENT_ID}}" \
@@ -372,22 +312,6 @@ install:
               chmod 600 /etc/newrelic-agent-control/keys/agent-control-identity.key
             fi
           fi
-
-    host_monitoring_config:
-      status:
-        - test -f /etc/newrelic-agent-control/.nr-cli
-      cmds:
-        - |
-          if [ "{{.HOST_OTEL}}" == "true" ] ; then
-            AGENT_SET="otel"
-          else
-            AGENT_SET="infra-agent"
-            INFRA_PROXY="--proxy-url={{.NEW_RELIC_AGENT_CONTROL_PROXY_URL}} --proxy-ca-bundle-file={{.NEW_RELIC_AGENT_CONTROL_PROXY_CA_BUNDLE_FILE}} --proxy-ca-bundle-dir={{.NEW_RELIC_AGENT_CONTROL_PROXY_CA_BUNDLE_DIR}} --ignore-system-proxy={{.NEW_RELIC_AGENT_CONTROL_PROXY_IGNORE_SYSTEM}}"
-          fi
-          
-          newrelic-agent-control-cli host-monitoring \
-              --region {{.NEW_RELIC_REGION}} \
-              --agent-set $AGENT_SET $INFRA_PROXY
 
     restart_agent_control:
       cmds:
@@ -405,13 +329,14 @@ install:
     assert_agent_control_status_ok:
       cmds:
         - |
-          MAX_RETRIES=150
+          MAX_RETRIES=5
+          INTERVAL_SECONDS=15
           TRIES=0
-          echo "Running agent status check attempt..."
-          # wait for status endpoint to be ready
+
+          echo "Running agent status check..."
           while [ $TRIES -lt $MAX_RETRIES ]; do
             ((TRIES++))
-            statusCheckOutput=$(curl -s http://localhost:51200/status)
+            statusCheckOutput=$(curl -s --noproxy '*' http://localhost:51200/status)
             if [ -z "$statusCheckOutput" ]; then
               # so jq doesn't fail if empty
               statusCheckOutput="{}"
@@ -421,15 +346,9 @@ install:
               echo "Agent status check ok."
               break
             else
+              echo "Agent status check attempt $TRIES/$MAX_RETRIES failed. Status response: $statusCheckOutput"
               if [ "$TRIES" -eq "$MAX_RETRIES" ]; then
-                # Process-based validation attempt
-                IS_AGENT_INSTALLED=$(ps aux | grep newrelic-agent-control | grep -v grep | wc -l)
-                if [ $IS_AGENT_INSTALLED -gt 0 ] ; then
-                  echo "detected newrelic-agent-control process running"
-                  exit 0
-                fi
-
-                echo "New Relic Agent Control has not started after installing. Please try again later, or see our documentation for installing manually https://docs.newrelic.com/docs/using-new-relic/cross-product-functions/install-configure/install-new-relic" >&2
+                echo "New Relic Agent Control verification failed. Visit https://docs.newrelic.com/docs/new-relic-control/agent-control/troubleshooting/#cli-debug for troubleshooting guidance." >&2
 
                 if [ {{.IS_SYSTEMCTL}} -gt 0 ]; then
                   journalctl -u newrelic-agent-control --no-pager
@@ -439,7 +358,7 @@ install:
               fi
             fi
 
-            sleep 2
+            sleep $INTERVAL_SECONDS
           done
 
     signal_recipe_applied:
