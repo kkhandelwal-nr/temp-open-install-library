@@ -22,8 +22,12 @@ installTargets:
     platform: "almalinux"
     platformFamily: rhel
     platformVersion: "((9|10)\\.?.*)"
-  
-    
+  - type: host
+    os: linux
+    platform: "oracle"
+    platformVersion: "(8|9|10)\\.*"
+
+
 keywords:
   - eBPF
   - Agent
@@ -195,13 +199,13 @@ install:
           echo "License key validated."
 
           # Validate DEPLOYMENT_NAME (required unless Agent Control mode)
-          if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
-            echo ""
-            exit 1
-          fi
-          echo "Deployment name validated."
+          # if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
+          #   echo ""
+          #   echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
+          #   echo ""
+          #   exit 1
+          # fi
+          # echo "Deployment name validated."
 
           # Set default log file path if not provided
           if [[ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]]; then
@@ -271,7 +275,7 @@ install:
           # -- Unique name for the deployment to identify data posting via eBPF Agent
           deploymentName: "${DEPLOYMENT_NAME:-}"
           # -- If using a customSecretLicenseKey, you must supply your
-          # region "US"/"EU". Otherwise, leave this value as an empty string.
+          # region "US"/"EU"/"JP". Otherwise, leave this value as an empty string.
           region: "${NEW_RELIC_REGION}"
           # -- Custom OTLP endpoint URL. When set, this takes precedence over the region-based static endpoints.
           customOtlpEndpoint: ""
@@ -596,12 +600,24 @@ install:
         - |
           KERNEL_VERSION=$(uname -r)
           echo "Installing kernel headers for kernel version: $KERNEL_VERSION"
-          if ! yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
-            echo ""
+          if echo "$KERNEL_VERSION" | grep -q "uek"; then
+            # Oracle Linux UEK: kernel-uek-devel contains all headers needed; no separate kernel-uek-headers package exists
+            if yum install -y "kernel-uek-devel-$KERNEL_VERSION"; then
+              echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
+            else
+              echo ""
+              echo -e "\e[31mERROR:\e[0m Failed to install UEK kernel headers for kernel $KERNEL_VERSION. Ensure the Oracle Linux UEK repo is enabled (e.g. ol8_UEKR7) and try again."
+              echo ""
+            fi
+          else
+            if yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
+              echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
+            else
+              echo ""
+              echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
+              echo ""
+            fi
           fi
-          echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
       ignore_error: true
 
     install_ebpf_agent:

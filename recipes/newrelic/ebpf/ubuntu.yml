@@ -195,13 +195,13 @@ install:
           echo "License key validated."
 
           # Validate DEPLOYMENT_NAME (required unless Agent Control mode)
-          if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
-            echo ""
-            exit 1
-          fi
-          echo "Deployment name validated."
+          # if [[ -z "${DEPLOYMENT_NAME:-}" && "${NEW_RELIC_AGENT_CONTROL:-}" != "true" ]]; then
+          #   echo ""
+          #   echo -e "\e[31mERROR:\e[0m DEPLOYMENT_NAME is required but not set. Aborting installation."
+          #   echo ""
+          #   exit 1
+          # fi
+          # echo "Deployment name validated."
 
           # Set default log file path if not provided
           if [[ -z "${NEW_RELIC_LOG_FILE_PATH:-}" ]]; then
@@ -271,7 +271,7 @@ install:
           # -- Unique name for the deployment to identify data posting via eBPF Agent
           deploymentName: "${DEPLOYMENT_NAME:-}"
           # -- If using a customSecretLicenseKey, you must supply your
-          # region "US"/"EU". Otherwise, leave this value as an empty string.
+          # region "US"/"EU"/"JP". Otherwise, leave this value as an empty string.
           region: "${NEW_RELIC_REGION}"
           # -- Custom OTLP endpoint URL. When set, this takes precedence over the region-based static endpoints.
           customOtlpEndpoint: ""
@@ -605,28 +605,21 @@ install:
 
           # Install the eBPF agent package
           apt-get $OPTIONS install -yq --no-install-recommends newrelic-ebpf-agent || {
-            echo "Error: newrelic-ebpf-agent installation failed"
-            echo "Attempting to configure the packages again"
-            dpkg --configure -a
-            # Check if there was an error
-            if [ $? -ne 0 ]; then
-              echo "Error found while reconfiguring dpkg database"
-              # Force-Install the Software
-              echo "Attempting to install any missing dependencies or fixes broken packages."
-              apt-get $OPTIONS install -f
-              if [ $? -ne 0 ]; then
+            # apt returned non-zero - check if eBPF agent was actually installed despite the error.
+            # dpkg exits non-zero when any package fails to configure, even ones unrelated to the
+            # eBPF agent (e.g. a broken nginx whose post-install script fails to bind its port).
+            if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
+              echo "Attempting to configure the packages again"
+              dpkg --configure -a 2>/dev/null || true
+              apt-get $OPTIONS install -f -yq 2>/dev/null || true
+              if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
+                echo ""
+                echo -e "\e[31mERROR:\e[0m newrelic-ebpf-agent installation failed. Aborting installation."
+                echo ""
                 exit 1
               fi
             fi
           }
-
-          # Verify package was actually installed
-          if ! dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
-            echo ""
-            echo -e "\e[31mERROR:\e[0m newrelic-ebpf-agent installation failed. Aborting installation."
-            echo ""
-            exit 1
-          fi
 
           echo "eBPF agent package installed successfully."
 
