@@ -594,31 +594,6 @@ install:
 
           echo "YAML configuration file created successfully at $CONFIG_FILE"
     
-    install_linux_headers:
-      cmds:
-        - |
-          KERNEL_VERSION=$(uname -r)
-          echo "Installing kernel headers for kernel version: $KERNEL_VERSION"
-          if echo "$KERNEL_VERSION" | grep -q "uek"; then
-            # Oracle Linux UEK: kernel-uek-devel contains all headers needed; no separate kernel-uek-headers package exists
-            if yum install -y "kernel-uek-devel-$KERNEL_VERSION"; then
-              echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
-            else
-              echo ""
-              echo -e "\e[31mERROR:\e[0m Failed to install UEK kernel headers for kernel $KERNEL_VERSION. Ensure the Oracle Linux UEK repo is enabled (e.g. ol8_UEKR7) and try again."
-              echo ""
-            fi
-          else
-            if yum install -y "kernel-devel-$KERNEL_VERSION" "kernel-headers-$KERNEL_VERSION"; then
-              echo "Kernel headers installed successfully for kernel $KERNEL_VERSION."
-            else
-              echo ""
-              echo -e "\e[31mERROR:\e[0m Failed to install kernel headers for kernel $KERNEL_VERSION. Please ensure the correct headers are available and try again."
-              echo ""
-            fi
-          fi
-      ignore_error: true
-
     install_ebpf_agent:
       cmds:
         - |
