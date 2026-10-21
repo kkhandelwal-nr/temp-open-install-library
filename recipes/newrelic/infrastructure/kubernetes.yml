@@ -94,6 +94,9 @@ install:
           NR_CLI_EBPF_AGENT_REPORT_LOGS="{{.NR_CLI_EBPF_AGENT_REPORT_LOGS}}"
           NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED="{{.NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED}}"
 
+          # Use eBPF (nrdot) for Kubernetes infrastructure instead of nri-kubernetes
+          NR_CLI_EBPF_INFRA="{{.NR_CLI_EBPF_INFRA}}"
+
           # Prometheus integrations
 
           # Legacy Prometheus integration
@@ -313,6 +316,12 @@ install:
           NR_CLI_EBPF_AGENT_REPORT_NETWORK_METRICS=${NR_CLI_EBPF_AGENT_REPORT_NETWORK_METRICS:-auto}
           NR_CLI_EBPF_AGENT_REPORT_LOGS=${NR_CLI_EBPF_AGENT_REPORT_LOGS:-false}
           NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED=${NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED:-true}
+
+          NR_CLI_EBPF_INFRA=${NR_CLI_EBPF_INFRA:-false}
+          # eBPF infrastructure requires the eBPF agent to be installed
+          if [[ "$NR_CLI_EBPF_INFRA" == "true" ]]; then
+            NR_CLI_EBPF_AGENT=true
+          fi
 
           # Prometheus integrations
 
@@ -650,6 +659,16 @@ install:
             ARGS="${ARGS} --set nr-ebpf-agent.reportLogs=${NR_CLI_EBPF_AGENT_REPORT_LOGS}"
             ARGS="${ARGS} --set nr-ebpf-agent.logDataFilters.applicationLogReporting.enabled=${NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED}"
 
+            # Use eBPF (nrdot) for Kubernetes infrastructure instead of nri-kubernetes.
+            # nri-kubernetes and nri-kube-events are mutually exclusive with the eBPF/nrdot
+            # infra provider; KSM and kube-events are already disabled via NR_CLI_KSM=false /
+            # NR_CLI_KUBE_EVENTS=false (ksm.enabled / kubeEvents.enabled above).
+            if [[ "$NR_CLI_EBPF_INFRA" == "true" ]]; then
+              ARGS="${ARGS} --set newrelic-infrastructure.enabled=false"
+              ARGS="${ARGS} --set infrastructure.enabled=false"
+              ARGS="${ARGS} --set nr-ebpf-agent.infra.enabled=true"
+            fi
+
             # Prometheus integrations
 
             # Legacy Prometheus integration
@@ -780,6 +799,15 @@ install:
             BODY="${BODY},\"nr-ebpf-agent.reportNetworkMetrics\":\"${NR_CLI_EBPF_AGENT_REPORT_NETWORK_METRICS}\""
             BODY="${BODY},\"nr-ebpf-agent.reportLogs\":\"${NR_CLI_EBPF_AGENT_REPORT_LOGS}\""
             BODY="${BODY},\"nr-ebpf-agent.logDataFilters.applicationLogReporting.enabled\":\"${NR_CLI_EBPF_AGENT_APPLICATION_LOG_REPORTING_ENABLED}\""
+
+            # Use eBPF (nrdot) for Kubernetes infrastructure instead of nri-kubernetes.
+            # KSM and kube-events are already disabled via NR_CLI_KSM=false /
+            # NR_CLI_KUBE_EVENTS=false (ksm.enabled / kubeEvents.enabled above).
+            if [[ "$NR_CLI_EBPF_INFRA" == "true" ]]; then
+              BODY="${BODY},\"newrelic-infrastructure.enabled\":\"false\""
+              BODY="${BODY},\"infrastructure.enabled\":\"false\""
+              BODY="${BODY},\"nr-ebpf-agent.infra.enabled\":\"true\""
+            fi
 
             # Prometheus integrations
 
