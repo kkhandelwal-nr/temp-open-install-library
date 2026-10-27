@@ -52,6 +52,10 @@ install:
         - task: update_apt_nr_source
         - task: install_ebpf_agent
         - task: disable_service_for_agent_control
+        - task: install_obi
+        - task: create_obi_config
+        - task: setup_obi_service
+        - task: enable_obi_service
 
     assert_pre_req:
       status:
@@ -207,6 +211,11 @@ install:
             export NEW_RELIC_LOG_FILE_PATH="/var/log/newrelic-ebpf-agent"
           fi
 
+          # Set default OBI version if not provided
+          if [[ -z "${OBI_VERSION:-}" ]]; then
+            export OBI_VERSION="0.15.2"
+          fi
+
           # Validate log directory can be created
           if [[ ! -d "$NEW_RELIC_LOG_FILE_PATH" ]]; then
             echo "Creating log directory $NEW_RELIC_LOG_FILE_PATH..."
@@ -245,7 +254,7 @@ install:
                         apt-get install -f -y || log_error_and_exit "Failed to resolve dependencies for the Debian package."
                     }
                     echo "Debian package and its dependencies installed successfully."
-                    exit 123
+                    exit 0
                 else
                     log_error_and_exit "The provided path does not point to a valid file: $LOCAL_PACKAGE_PATH"
                 fi
@@ -328,6 +337,13 @@ install:
           # This is useful when auto discovery of distribution linux headers
           # path fails.
           distroKernelHeadersPath: ""
+          # -- OTLP receiver for OBI co-installation. When OBI is enabled, the agent
+          # opens a local OTLP listener so OBI can forward its traces/metrics through
+          # the agent to New Relic (OBI never talks to NR directly).
+          otlpReceiver:
+            enabled: ${OBI_ENABLED:-false}
+            grpcAddr: "127.0.0.1:4317"
+            httpAddr: "127.0.0.1:4318"
           # -- Enable APM data reporting. When enabled, the agent collects
           # and reports application performance monitoring data.
           # Controls APM data reporting. Accepted values: 'true' (always send),
@@ -605,6 +621,15 @@ install:
       ignore_error: true
 
     install_ebpf_agent:
+      status:
+        - |
+          # Skip apt install when a local package was provided — it is already installed
+          # and we must not let apt overwrite it with a potentially different public version.
+          if [[ -n "${LOCAL_PACKAGE_PATH:-}" ]] && dpkg -l | grep -q "^ii.*newrelic-ebpf-agent"; then
+            echo "Local package already installed, skipping apt install."
+            exit 0
+          fi
+          exit 1
       cmds:
         - |
           export DEBIAN_FRONTEND=noninteractive
@@ -646,6 +671,163 @@ install:
           sudo systemctl stop newrelic-ebpf-agent
           sudo systemctl disable newrelic-ebpf-agent
       ignore_error: true
+
+    # Download and install the OBI binary from GitHub releases.
+    # Skipped when OBI_ENABLED is not "true".
+    install_obi:
+      status:
+        - |
+          if [ "${OBI_ENABLED:-}" != "true" ]; then
+            exit 0
+          fi
+          exit 1
+      cmds:
+        - |
+          ARCH="amd64"
+          if [ $(uname -m | grep -i 'aarch64' | wc -l) -gt 0 ]; then
+            ARCH="arm64"
+          fi
+          VERSION="${OBI_VERSION:-0.15.2}"
+
+          # Skip download if OBI is already installed at the target version
+          if [ -f /usr/local/bin/obi ]; then
+            INSTALLED=$(/usr/local/bin/obi --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            if [ "$INSTALLED" = "$VERSION" ]; then
+              echo "OBI v${VERSION} is already installed. Skipping download."
+              exit 0
+            else
+              echo "Upgrading OBI from v${INSTALLED} to v${VERSION}."
+            fi
+          fi
+
+          TMPDIR=$(mktemp -d)
+          echo "Downloading OBI v${VERSION} (${ARCH})..."
+          curl -fsSL -o "${TMPDIR}/obi-v${VERSION}-linux-${ARCH}.tar.gz" \
+            "https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/download/v${VERSION}/obi-v${VERSION}-linux-${ARCH}.tar.gz"
+          curl -fsSL -o "${TMPDIR}/SHA256SUMS" \
+            "https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/download/v${VERSION}/SHA256SUMS"
+
+          cd "${TMPDIR}"
+          if ! sha256sum -c SHA256SUMS --ignore-missing; then
+            echo ""
+            echo -e "\e[31mERROR:\e[0m OBI checksum verification failed. Aborting installation."
+            echo ""
+            rm -rf "${TMPDIR}"
+            exit 1
+          fi
+
+          tar -xzf "obi-v${VERSION}-linux-${ARCH}.tar.gz"
+          cp obi /usr/local/bin/obi
+          chmod +x /usr/local/bin/obi
+
+          # Cache directory for the embedded Java agent
+          mkdir -p /var/cache/obi
+
+          rm -rf "${TMPDIR}"
+          echo "OBI v${VERSION} installed successfully."
+
+    # Write the OBI configuration file and the EnvironmentFile with OTLP exporter settings.
+    # Skipped when OBI_ENABLED is not "true".
+    create_obi_config:
+      status:
+        - |
+          if [ "${OBI_ENABLED:-}" != "true" ]; then
+            exit 0
+          fi
+          exit 1
+      cmds:
+        - |
+          mkdir -p /etc/obi
+
+          # obi.yaml: create-if-missing so user customizations survive re-runs.
+          # Reference: https://opentelemetry.io/docs/zero-code/obi/configure/options/
+          if [ -f /etc/obi/obi.yaml ]; then
+            echo "/etc/obi/obi.yaml already exists. Leaving existing config untouched."
+          else
+            tee /etc/obi/obi.yaml > /dev/null << 'EOS'
+          file_format: '1.0'
+          extensions:
+            obi:
+              version: '2.0'
+              capture:
+                policy:
+                  default_action: include
+          EOS
+            echo "OBI configuration written to /etc/obi/obi.yaml"
+          fi
+
+          # /etc/obi/env: always overwrite — it is generated from eBPF config values
+          # (license key, OTLP endpoint) and must stay in sync with the eBPF agent config.
+          tee /etc/obi/env > /dev/null << EOS
+          OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+          OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+          OTEL_EXPORTER_OTLP_HEADERS=api-key=${NEW_RELIC_LICENSE_KEY}
+          EOS
+          chmod 600 /etc/obi/env
+          echo "/etc/obi/env updated with latest credentials."
+
+    # Create the systemd unit file for OBI.
+    # Skipped when OBI_ENABLED is not "true".
+    setup_obi_service:
+      status:
+        - |
+          if [ "${OBI_ENABLED:-}" != "true" ]; then
+            exit 0
+          fi
+          exit 1
+      cmds:
+        - |
+          tee /etc/systemd/system/obi.service > /dev/null << 'EOS'
+          [Unit]
+          Description=OpenTelemetry eBPF Instrumentation (OBI)
+          After=network.target newrelic-ebpf-agent.service
+          Wants=newrelic-ebpf-agent.service
+
+          [Service]
+          User=root
+          ExecStart=/usr/local/bin/obi
+          Restart=on-failure
+          RestartSec=5s
+          EnvironmentFile=/etc/obi/env
+          Environment="XDG_CACHE_HOME=/var/cache/obi"
+          Environment="GOGC=30"
+          Environment="OTEL_EBPF_LOG_LEVEL=info"
+          Environment="OTEL_EBPF_OPEN_PORT=1-65535"
+          Environment="OTEL_EBPF_METRICS_FEATURES=application"
+          Environment="OTEL_EBPF_TRACES_INSTRUMENTATIONS=*"
+          Environment="OTEL_EBPF_BPF_CONTEXT_PROPAGATION=all"
+          Environment="OTEL_EBPF_BPF_HIGH_REQUEST_VOLUME=true"
+          Environment="OTEL_EBPF_JAVAAGENT_ATTACH_TIMEOUT=60s"
+          Environment="OTEL_TRACES_SAMPLER=parentbased_always_on"
+          Environment="OTEL_EBPF_BPF_BATCH_LENGTH=1000"
+          Environment="OTEL_EBPF_OTLP_TRACES_BATCH_MAX_SIZE=512"
+
+          [Install]
+          WantedBy=multi-user.target
+          EOS
+
+          systemctl daemon-reload
+          echo "OBI systemd service created."
+
+    # Enable (and optionally start) the OBI service.
+    # When Agent Control is managing the lifecycle, the service is registered but not started.
+    # Skipped when OBI_ENABLED is not "true".
+    enable_obi_service:
+      status:
+        - |
+          if [ "${OBI_ENABLED:-}" != "true" ]; then
+            exit 0
+          fi
+          exit 1
+      cmds:
+        - |
+          if [ "${NEW_RELIC_AGENT_CONTROL:-}" = "true" ]; then
+            systemctl enable obi
+            echo "OBI service enabled (Agent Control will manage startup)."
+          else
+            systemctl enable --now obi
+            echo "OBI service enabled and started."
+          fi
 
 postInstall:
   info: |2
